@@ -1,0 +1,16 @@
+{
+  "id": "2927704",
+  "name": " ",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "10332468",
+      "name": "团队",
+      "font_class": "tuandui",
+      "unicode": "e602",
+      "unicode_decimal": 58882
+    }
+  ]
+}
