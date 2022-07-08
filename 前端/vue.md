@@ -1,4 +1,4 @@
-# Vue
+# checkVue
 
 ## what
 
@@ -168,6 +168,31 @@
 
   - `.stop` stopPropagation() 阻止冒泡事件
 
+    冒泡 微软提出 从确定到不确定
+
+    捕获 网景提出 从不确定到确定
+
+    先经过捕获再冒泡
+
+    div#div1 @click='log' > div#div2 @click='log'> div#div3 @click='log'
+
+          //target 触发事件的元素（即被点击的元素）
+          //currentTarget 绑定事件的元素（与this相等）
+           console.log(that.currentTarget.id); 
+    点击div#div3 输出3-2-1
+
+    
+
+    div#div1 @click='log' @click.capture='log' > div#div2 @click='log' @click.capture='log' > div#div3 @click='log' @click.capture='log'
+
+    先捕获再冒泡 输出1-2-3-3-2-1
+
+    
+
+    div#div2 @click.stop='log'  输出1-2-3-3-2(包含当前结点)
+
+    div#div2 @click.capture.stop='log' 输出1-2 (连冒泡都没了)
+
   - `.prevent` preventDefault() 阻止默认事件
 
   - `.capture`  内部元素触发的事件先在此处理，然后才交由内部元素进行处理
@@ -222,9 +247,8 @@
 
     v-on:click.exact 没有任何系统修饰符被按下的时候才触发
 
-    v-on:click.ctrl.exact 有且只有 Ctrl 被按下的时候才触发
-
-  用 `v-on:click.prevent.self` 会阻止**所有的点击**，而 `v-on:click.self.prevent` 只会阻止对元素自身的点击。
+    v-on:keydown.ctrl.exact 有且只有 Ctrl 被按下的时候才触发
+    
 
 * **v-model**
 
@@ -240,7 +264,9 @@
 
     <input type="checkbox" value="B" v-model='checkModel'>B
 
-    checkModel:[],
+    checkModel:[] 表示选中的项
+
+    checkBox输入value会改变checked属性;同时跟普通input一样,勾选就是输入value.  true->全部勾选  false->都不勾选
 
   * ​      <select v-model='selectModel' multiple>
 
@@ -282,13 +308,13 @@
 
     ​	选中y1  未选中y2
 
-  * .lazy 默认每次input事件触发后数据同步--> change事件后同步
+  * .lazy 默认每次input事件触发后数据同步--> change事件后同步,也就是在失去焦点 或者 按下回车键时(且与上次的值不同)才更新
 
     .number 自动将输入转为数值
 
     .trim 自动去掉首尾空白符
 
-    
+    <input v-model.lazy="num">
 
     
 
@@ -316,6 +342,8 @@
   v-else-if/v-else元素须紧跟在带 v-if 或者 v-else-if 的元素的后面，否则它将不会被识别
   ```
 
+  **略过:**
+
   **template标签会保留之前同一组件内容**，如果想这两个元素是完全独立的，不要复用它们，只需添加一个具有唯一值的 `key` attribute 即可
 
   ```js
@@ -339,6 +367,8 @@
 
   运行时条件频繁切换时使用
 
+  v-show="true"
+
 * **v-for**
 
   ```jsx
@@ -351,7 +381,7 @@
 
   在 `v-for` 块中，我们可以访问所有父作用域的 property
 
-  可以用 `of` 替代 `in` 作为分隔符，因为它更接近 JavaScript 迭代器的语法。同样的可以对 对象 进行遍历
+  可以用 `of` 替代 `in` 作为分隔符，因为它更接近 JavaScript 迭代器(js in(index,key) of(value) )的语法。同样的可以对 对象 进行遍历
 
   ```js
   <div v-for="(value, name, index) in object">
@@ -359,7 +389,7 @@
   </div>
   ```
 
-  为了给 Vue 一个提示，以便它能跟踪每个节点的身份，从而重用和重新排序现有元素，你需要为每项提供一个唯一 `key` attribute(基本数据类型和String)
+  为了给 Vue 一个提示，以便它能跟踪每个节点的身份(每个结点唯一)，从而重用和重新排序现有元素，你需要为每项提供一个唯一 `key` attribute(基本数据类型和String)
 
   ```jsx
   div id="app">
@@ -399,7 +429,7 @@
 
   同一元素中使用v-for/v-if  v-for优先级高于v-if
 
-  给模版传递参数
+  给组件传递参数
 
   ```jsx
   <my-component
@@ -556,6 +586,70 @@ data: {
 <div :style="{ display: ['-webkit-box', '-ms-flexbox', 'flex'] }"></div> 只会渲染数组中最后一个被浏览器支持的值
 ```
 
+## import/export 模块
+
+1. export default
+
+```jsx
+// there is no semi-colon here
+export default function() {} 
+export default class {}
+
+//示例
+class A extends Component{
+   ...
+}
+export default A;
+
+//对应的import示例。
+import A from './requireTest'
+
+//default export, 输入 lodash 模块
+import _ from 'lodash';
+
+//一条import语句中，同时输入默认方法和其他变量
+import _, { each } from 'lodash';
+
+//上述代码对应的export语句
+export default function (obj) {
+  // ···
+}
+export function each(obj, iterator, context) {
+  // ···
+}
+export { each as forEach };
+```
+
+注意：一个模块仅仅只允许导出一个default对象，实际导出的是一个default命名的变量进行重命名，等价语句如下。所以import后可以是任意变量名称，且不需要{}。
+
+2. named
+
+   export命令规定的是对外的接口，必须与模块内部的变量建立一一对应关系。另外，export语句输出的接口，与其对应的值是**动态绑定**关系，即通过该接口，可以取到模块内部实时的值。
+
+   import后面的from指定模块文件的位置，可以是相对路径，也可以是绝对路径，.js路径可以省略.
+
+   ```jsx
+   // profile.js
+   //第一种export
+   export var firstName = 'Michael';
+   export function f() {};
+   
+   //第二种export，优先使用这种写法
+   var firstName = 'Michael';
+   export {firstName}；
+   
+   function f() {}
+   export {f};
+   
+   //main.js
+   import { firstName, f } from './profile';
+   import { firstName as surname } from './profile';
+   ```
+
+   必须保证一个模块内导入的变量名唯一
+
+
+
 ## 组件
 
 Vue推荐 SPA(single page application) 一个应用只有一个vue实例
@@ -617,6 +711,65 @@ Vue.componet(name,obj)
 
     })
 
+### 例子
+
+```
+comp1.js
+
+export default  {
+  template: "<div>{{count}}</div>",
+  data: function () {
+    return {
+      count: 1,
+    };
+  },
+};
+
+
+index.html
+ <script type="module">
+      import comp1 from "./comp1.js";
+      let vue = new Vue({
+        el: "#app",
+        data: {},
+        components: { comp1 },
+      });
+    </script>
+```
+
+或
+
+```
+mycomponet.vue
+<template>
+    <div class="hello">Hello {{who}}</div>
+</template>
+<script>
+module.exports = {
+    data: function() {
+        return {
+            who: 'world'
+        }
+    }
+}
+</script>
+<style>
+.hello {
+    background-color: #ffe;
+}
+</style>
+
+
+index.html
+<script src="https://unpkg.com/http-vue-loader"></script>
+...
+ components: {
+          'my-component': httpVueLoader('my-component.vue')//加载需要使用的vue文件
+        }
+```
+
+
+
 * 通过props机制（只能将**父组件传递给子组件**数据**单向传递**）向子组件传递数据
 
   一个组件默认可以拥有任意数量的 prop，任何值都可以传递给任何 prop，在组件实例中访问这个值，就像访问 `data` 中的值一样。
@@ -625,7 +778,7 @@ Vue.componet(name,obj)
 
   ​	子组件定义内部data不能重复声明
 
-  b.传递动态属性  v-bind:props_attibute=parent_comp_attibute
+  b.传递动态属性  v-bind:props_attibute=parent_comp_attibute(不能是字面量)
 
   **注意：不应该在子组件内部改变prop(无法修改成功) 如果一定要修改，可以在data新增  newProp:this.prop**
 
@@ -777,6 +930,8 @@ Vue.componet(name,obj)
 
 * 动态切换 v-bind:is
 
+  :is="A" 表示加载A组件  当值变成B则编程加载B组件
+
 ### 插槽 slot
 
 作用 ： 灵活扩展组件 相当于usb接口
@@ -799,7 +954,9 @@ Vue.componet(name,obj)
     }
 ```
 
+默认显示所有slot
 
+<span slot="aa">  表示取消aa的slot显示
 
 ## 可复用性&组合
 
@@ -834,56 +991,56 @@ param2: 一个与模板中 attribute 对应的数据对象。可选。
 
 param3: {String | Array} 子级虚拟节点 (VNodes)，由 `createElement()` 构建而成，也可以使用字符串来生成“文本虚拟节点”。可选。
 
-## 传递参数的方式
+
+
+## ref
+
+vue2
 
 ```
-<body>
-    <div id="app">
-        <h3>用户</h3>
-        
-        <!-- 地址栏传递参数分为两种
-            1. queryString this.$route.query.key
-            2. restful this.$route.params.key
-         -->
-         <!-- <a href="#/login?a=1&b=2">用户登录</a>
-         <a href="#/register/1/jinjianou">用户注册</a> -->
-        <router-link :to='{name:"Login",query:{a:-1,b:0}}'>用户登录</router-link>
-        <router-link :to='{name:"Register",params:{id:1,name:"jinjianou"}}'>用户注册</router-link>
-
-        <router-view/>
-    </div>
-</body>
+<template>
+  <div class="hello">
+    <button @click="increment">{{count}}</button>
+  </div>
+</template>
 <script>
-    const login={
-        template:`<div>用户登录 {{queryString.a}}-{{queryString.b}}</div>`,
-        data(){
-            return {
-                queryString:this.$route.query
-            }
-        },
-        created(){
-            console.log(this.$route.query);
-        }
-
+module.exports = {
+  data: function () {
+    return {
+      count: 1
     }
-    const register={
-        template:`<div>用户注册</div>`,
-        created(){
-            console.log(this.$route.params);
-        }
-    }
-    const router=new VueRouter({
-        routes:[
-            {path:'/login',component:login,name:'Login'},
-            {path:'/register/:id/:name',component:register,name:'Register'},
-        ]
-    })
-    const app=new Vue({
-        el:'#app',
-        data:{},
-        router,
-    })
+  },
+	methods:{
+		increment(){
+			this.count+=1;
+		}
+	}
+}
 </script>
+```
+
+options Api   data ,methods....都是option
+
+vue3提供一个新的option setup(又被叫做composition api) 
+
+```
+import { ref } from 'vue'
+module.exports = {
+  setup () {
+    //响应式 数据变化 视图做相应变化
+    let count = ref(0);
+
+    increment = () => {
+      count.value =count.value + 1;
+    }
+
+    //在模板中使用的数据
+    return {
+      count,
+      increment,
+    }
+  }
+}
 ```
 
 
@@ -902,7 +1059,7 @@ param3: {String | Array} 子级虚拟节点 (VNodes)，由 `createElement()` 构
 
    问题：Access to XMLHttpRequest at 'http://localhost:9090/demo' from origin 'http://localhost:8080' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
 
-   跨域问题 可以添加@CrossOrigin
+   跨域问题 后台可以添加@CrossOrigin
 
 4. post/put 第二个参数json对象
 
@@ -981,6 +1138,10 @@ URL中有#/成为hash路由，路由路径,没有特殊的含义
 </script>
 ```
 
+其中 <router-view/> **显示当前路由级别下一级的 页面** 
+
+没有name的视图，将default作为其名称,可以有多个视图,通过name确定.
+
 ## 路由切换
 
 标签切换
@@ -1029,6 +1190,61 @@ URL中有#/成为hash路由，路由路径,没有特殊的含义
                 
                 
 ```
+
+## 传递参数的方式
+
+```
+<body>
+    <div id="app">
+        <h3>用户</h3>
+        
+        <!-- 地址栏传递参数分为两种
+            1. queryString this.$route.query.key ?a=1&b=2
+            2. restful this.$route.params.key 									#/register/1/jinjianou
+            	此时routers path  /register/:id/:name
+         -->
+       <!-- <a href="#/login?a=1&b=2">用户登录</a>  
+         <a href="#/register/1/jinjianou">用户注册</a> -->
+        <router-link :to='{name:"Login",query:{a:-1,b:0}}'>用户登录</router-link>
+        <router-link :to='{name:"Register",params:{id:1,name:"jinjianou"}}'>用户注册</router-link>
+
+        <router-view/>
+    </div>
+</body>
+<script>
+    const login={
+        template:`<div>用户登录 {{queryString.a}}-{{queryString.b}}</div>`,
+        data(){
+            return {
+                queryString:this.$route.query
+            }
+        },
+        created(){
+            console.log(this.$route.query);
+        }
+
+    }
+    const register={
+        template:`<div>用户注册</div>`,
+        created(){
+            console.log(this.$route.params);
+        }
+    }
+    const router=new VueRouter({
+        routes:[
+            {path:'/login',component:login,name:'Login'},
+            {path:'/register/:id/:name',component:register,name:'Register'},
+        ]
+    })
+    const app=new Vue({
+        el:'#app',
+        data:{},
+        router,
+    })
+</script>
+```
+
+
 
 ## 嵌套路由
 
@@ -1117,6 +1333,14 @@ URL中有#/成为hash路由，路由路径,没有特殊的含义
 </script>
 ```
 
+注意点:
+
+1. 同级别(带/)的path切换时会替换,子组件则会出现在父组件内
+2. 组件中的data是function 
+3. :to="{name:'mod',params:{id:user.id}}" 引用类型传引用
+4. this.$route.query 或者 this.$route.params  传引用会改变原数据
+5. this.$router.push({name:'User'})
+
 
 
 # 脚手架 vue-cli
@@ -1160,6 +1384,7 @@ vue cli 仅仅提供几个命令构建脚手架项目
 
    webpack.base.conf.js:
 
+   ```
    resolve: {
    // 路径别名
    alias: {
@@ -1167,6 +1392,7 @@ vue cli 仅仅提供几个命令构建脚手架项目
    'vue$': 'vue/dist/vue.esm.js'
    }
    }
+   ```
 
 5. 配置环境变量，初始化项目
 
@@ -1309,5 +1535,47 @@ this.$router.go(0) 刷新当前页
 
 
 
+# 问题
 
+* live server 无法自动刷新页面
 
+    "liveServer.settings.donotVerifyTags": true,
+    "liveServer.settings.CustomBrowser": "chrome",
+    "liveServer.settings.AdvanceCustomBrowserCmdLine": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+
+  或者安装live preview
+
+* Cannot use import statement outside a module
+
+  无法在模块外部使用使用import
+
+  **Module 的加载实现的是es6语法**
+
+  script标签加入type="module"属性
+
+* <script type="module" src="./comp1.jsx"></script>
+
+  Access to script at 'file://xxxx'  from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: http, data, chrome, chrome-extension, chrome-untrusted, https.
+
+  不支持file协议
+
+  1. 给浏览器传入启动参数（--allow-file-access-from-files）
+
+  2. 使用anywhere（静态文件服务器），可以使用npm 安装
+
+     ```
+     npm install anywhere -g 
+     ```
+
+     切换到index.html 所在的文件夹，运行 anywhere
+
+     ```
+     anywhere
+     anywhere -p 8080
+     ```
+
+     
+
+     
+
+     

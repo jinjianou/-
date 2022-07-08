@@ -1280,3 +1280,14 @@ end;
 / 
 ```
 
+## for update [of column] | [nowait]
+
+Oracle provides the FOR UPDATE NOWAIT clause in SQL syntax to allow the developer to lock a set of Oracle rows for the duration of a transaction.
+
+* for update  行级锁 锁表或锁行; 多表时锁住所有表
+* of column 锁住列column对应的表 单表时无区别
+* wait n|nowait 等待n sec 或不等待; 若锁冲突,则提示报错,资源正忙
+
+其他session能读吗?
+
+有索引没索引 锁表锁行?
