@@ -57,15 +57,17 @@ public class LogAspect {
 
 2. Servlet3.0提供了一系列注解来替代原本的xml配置（包括web.xml）
 
-3.  SPI（Service Provider Interface），是JDK内置的一种服务提供发现机制，可以用来启用框架扩展和替换组件 
+3. SPI（Service Provider Interface），是JDK内置的一种服务提供发现机制，可以用来启用框架扩展和替换组件 
 
    Java.util.ServiceLoader
 
-   * 在ClassPath下（如resources）建  PREFIX = "META-INF/services/"下新建文件 
+   * 在ClassPath下（如resources）建  新建文件夹 "META-INF/services/"
 
    * 文件名为接口的全限定类名 文件内容为实现的全限定类名（不需要后缀）
 
    * 实现必须有空参构造
+
+   * 必须保证实现类public修饰
 
      ```
      ServiceLoader<Iparser> serviceLoader = ServiceLoader.load(Iparser.class);

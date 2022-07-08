@@ -1079,8 +1079,51 @@ explain plan FOR 【sqlplus 】
    最后通过修改表字段实现.....
 
    - Plan hash value 是该语句的哈希值。SQL 语句和执行计划会存储在库缓存中，哈希值相同的语句可以重用已有的执行计划，也就是软解析;
+
    - Id 是一个序号，但不代表执行的顺序。执行的顺序按照缩进来判断，缩进越多的越先执行，同样缩进的从上至下执行。Id 前面的星号表示使用了谓词判断，参考下面的 Predicate Information;
+
    - Operation 表示当前的操作，也就是如何访问表的数据、如何实现表的连接、如何进行排序操作等; 
+
+     表访问方式：
+
+     1. **Full Table Scan (FTS) 全表扫描** 
+
+        表扫描模式下会读数据到表的高水位线（HWM即表示表曾经扩展的最后一个数据块），读取速度依赖于Oracle初始化参数db_block_multiblock_read_count 
+
+     2. **Index Lookup 索引扫描** 
+
+        * **index unique scan**   --索引唯一扫描 
+
+          e.g.  =
+
+        * **index range scan**   --索引局部扫描 
+
+          e.g. > < <> >= <= between 
+
+        * **index full scan**   --索引全局扫描 
+
+          want the data to be ordered in the index order. 
+
+          e.g. order by
+
+        * **index fast full scan**   --索引快速全局扫描，不带order by情况下常发生 
+
+        * **index skip scan**   --索引跳跃扫描，where条件列是非索引的前导列情况下常发生 
+
+          the column is not the leading column of a concatenated index 
+
+          eg: SQL> create index i_emp on emp(empno, ename); SQL> select  job from emp where ename='SMITH'; 
+
+     3. **Rowid 物理ID扫描**
+
+        Rowid扫描是最快的访问数据方式 
+
+   
+
+   ​	表连接方式：
+
+   https://www.cnblogs.com/operationMaltz/archive/2013/03/19/2967169.html
+
    - Name 显示了访问的表名、索引名或者子查询等，前提是当前操作涉及到了这些对象;
    - Rows 是 Oracle 估计的当前操作返回的行数，也叫基数(Cardinality);
    - Bytes 是 Oracle 估计的当前操作涉及的数据量
@@ -1094,6 +1137,12 @@ explain plan FOR 【sqlplus 】
 - 字节(Bytes)：执行SQL对应步骤返回的字节数
 - 耗费(COST)、CPU耗费：Oracle估计的该步骤的执行耗费和CPU耗费
 - 时间(Time)：Oracle估计的执行sql对于步骤需要的时间
+
+案例一：
+
+explain plan for select T1.id2,T1.name,T2.id,T2.name from T1 inner join T2 on t1.name=t2.name;
+
+![1657195976546](assets/1657195976546.png)首先会先扫描右侧的t2表，该字段无索引，全表扫，T1
 
 
 

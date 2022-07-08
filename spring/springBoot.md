@@ -1,6 +1,4 @@
-# SpringBoot
-
-## Spring
+# Spring
 
 ![4](C:\Users\Administrator\Desktop\复习\素材\pic\spring\4.jpg)
 
@@ -33,9 +31,11 @@ BeanFactory:反射创建对象，并反射配置属性并在生命周期内进�
 
 * 
 
-## SpringBoot 概念
+# SpringBoot 概念
 
 ![6](C:\Users\Administrator\Desktop\复习\素材\pic\spring\6.jpg)
+
+# Hello world
 
 ```java
     <parent>
@@ -106,6 +106,7 @@ public class Application {
       <artifactId>spring-boot-maven-plugin</artifactId>
       <configuration>
       <!--fork:如果没有该项配置,整个devtools不会起作用-->
+      <!--复制当前进程（包括进程在内存里的堆栈数据）为1个新的镜像  两个进程是互不影响-->
           <fork>true</fork>
       </configuration>
    </plugin>
