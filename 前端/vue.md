@@ -622,6 +622,10 @@ export { each as forEach };
 
 注意：一个模块仅仅只允许导出一个default对象，实际导出的是一个default命名的变量进行重命名，等价语句如下。所以import后可以是任意变量名称，且不需要{}。
 
+**export default 那么import必须不带{},反之不然** 
+
+**导出后该对象不能再做修改**
+
 2. named
 
    export命令规定的是对外的接口，必须与模块内部的变量建立一一对应关系。另外，export语句输出的接口，与其对应的值是**动态绑定**关系，即通过该接口，可以取到模块内部实时的值。
@@ -1049,6 +1053,10 @@ module.exports = {
 
 1. npm install axios --save(在项目目录下)或下载js
 
+   -g 只安装到全局包仓库
+
+   --save 只安装到本项目
+
 2. import axios from 'axios'
 
 3. ​    axios.get(`http://localhost:9090/demo`)
@@ -1065,7 +1073,7 @@ module.exports = {
 
 推荐创建方式 
 
-​		let instance=**axios.create([config])**
+​		let instance=**axios.create([config])**  可以无参
 
 ​		instance.get...
 
@@ -1076,6 +1084,53 @@ module.exports = {
 ```
 
 
+
+## 全局配置
+
+main.js：
+
+替换vue内部的异步请求组件$http为axios
+Vue.prototype.$http=axios  (instance)  
+axios.get -> this.$http.get 
+
+
+
+route.index.js
+
+Vue.use()的作用是**通过全局方法 Vue.use() 使用插件**,而且它需要在你调用 new Vue() 启动应用之前完成 
+
+**Vue.use(plugin, options) plugin的类型可以是{ object | Function }options是一个可选的对象** 
+
+```
+const plugin={
+    install(vue,options){....}
+}
+或者
+
+function(vue,options){....}
+```
+
+```
+plugin.js
+const plugin1={
+	install(vue,options){
+		console.log("plugin1 第一个参数：",vue);
+		console.log("plugin1 第二个参数：",options);
+	}
+}
+
+export {plugin1}
+
+main.js
+
+Vue.use(plugin1,'插件一')
+```
+
+
+
+# rap2
+
+后台接口及模拟数据生成
 
 # vue-router
 
@@ -1146,7 +1201,7 @@ URL中有#/成为hash路由，路由路径,没有特殊的含义
 
 标签切换
 
-```jsx
+```注意jsx
   <!-- 通过链接的方式切换路由 -->
         <!-- 1.根据请求路径切换显示不同组件 -->
             <a href="#/login">用户登录</a>
@@ -1170,6 +1225,16 @@ URL中有#/成为hash路由，路由路径,没有特殊的含义
             { path: '*', component: notFound },
         ]
 ```
+注意： router-link会阻止click事件 所以@click 无效 需要用@click.native **并且跳转会在click之前**
+
+需要通过再方法里push的方式
+
+```
+<router-link :to="{}"  @click.native='changeRecord(user)'>修改</router-link></td>
+```
+
+
+
 在js代码中切换
 
 ```jsx
@@ -1394,11 +1459,23 @@ vue cli 仅仅提供几个命令构建脚手架项目
    }
    ```
 
-5. 配置环境变量，初始化项目
+5. 初始化项目
 
-   vue-init webpack hello
+   vue-init webpack hello  （vue-init是bat）
 
    在当前目录下创建hello项目 采用webpack打包方式
+
+   问题：'webpack-dev-server' 不是内部或外部命令，也不是可运行的程序
+
+   npm install webpack-dev-server@^2.9.1
+
+   `^`指明的版本范围，只要**不**修改 **[major, minor, patch]** 三元组中，**最左侧的第一个非0位**，都是可以的 
+
+   - `^1.2.3`版本包括：>= `1.2.3` 并且 < `2.0.0`
+   - `^0.2.3`版本包括：>= `0.2.3` 并且 < `0.3.0`
+   - `^0.0.3`版本包括：>= `0.0.3` 并且 < `0.0.4`
+
+    
 
 ## 目录
 
@@ -1430,6 +1507,10 @@ vue cli 仅仅提供几个命令构建脚手架项目
 9. package-lock.json 固化当前安装的每个软件包的版本，
    当运行 npm install时，npm 会使用这些确切的版本。
    当运行 npm update 时，package-lock.json 文件中的依赖的版本会被更新
+
+入口 index.html+main.js    App.vue 主组件
+
+vue-cli中一切皆组件
 
 ## 代码格式化
 
@@ -1505,6 +1586,14 @@ vue cli 仅仅提供几个命令构建脚手架项目
 
 2. 在每次安装Ctrl+S保存代码时，代码的格式会自动格式化
 
+3. 点击右下角的“纯文本”---选择“.vue的配置文件关联”---之后选择“html”（我是前端所以选择了HTML），之后每次进入页面都不需要再次选择 
+
+   问题：You may use special comments to disable some warnings.
+
+   取消ESLint验证规则   webpack.base.conf.js  注释掉      ...(config.dev.useEslint ? [createLintingRule()] : []), 
+
+   
+
 ## 前端标准开发
 
 1. 新增views（业务组件），components(公共组件)
@@ -1534,6 +1623,244 @@ this.$router.go(0) 刷新当前页
 在main.js导入 import 'xxxx.css'
 
 
+
+
+
+# Vuex
+
+## 概述
+
+### 组件间共享数据的方式
+
+父向子： v-bind绑定属性  props
+
+子向父：v-on 绑定方法  $emit
+
+**兄弟组件**之间：**eventBus**
+
+​	eventBus 事件总线
+
+​	所有组件公用相同的事件中心，可以向该中心注册发送或接收事件
+
+### eventBus 
+
+1.  初始化
+
+   第一种：
+
+   ```
+   // event-bus.js
+   import Vue from 'vue'
+   export const EventBus = new Vue()
+   ```
+
+   第二种（全局）：
+
+   ```
+   // main.js
+   Vue.prototype.$EventBus = new Vue()
+   ```
+
+   或
+
+   ```
+   //带s覆盖所有属性 不带指的是某个
+   //Object.defineProperty(obj, prop, descriptor)
+   Object.defineProperty(Vue.prototype,'$EventBus',{
+     get(){
+       return eventBus;
+     }
+   });
+   ```
+
+   
+
+2. 发送事件
+   假设有A,B两个组件，A页面装载按钮上绑定点击事件，发送事件通知B页面
+
+   发送&接收
+
+   ```
+   EventBus.$emit(
+   	channelL:string,
+   	payload1,...
+   )
+   ```
+
+   ```
+   EventBus.$on(
+   	channelL:string,
+   	callback(payload1,...)
+   )
+   
+   ```
+
+   移除：
+
+   ```
+   EventBus.$off(channel, {})
+   ```
+
+   
+
+### 由来
+
+![1657418080200](C:\Users\Administrator\Desktop\复习\前端\assets\1657418080200.png)
+
+
+
+好处：
+
+1. 便于开发和维护
+2. 搞笑实现组件之间的数据共享，提高开发效率
+3. 存储在vuex中的数据都是响应式的，能够实时保存数据和页面的同步
+
+## 基本使用
+
+一般来说：
+
+组件私有数据，存在组件data
+组件共享，存在vuex
+
+
+
+1. 安装vuex依赖
+  npm install vuex@3 -g
+  npm install vuex@3 --save
+
+  最新4的版本适合vue@3的版本 用3
+
+store.js:
+2. 导入vuex包
+  import Vue from 'vue'
+  import Vuex from 'vuex'
+  Vue.use(Vuex)
+3. 创建store对象
+  export default new Vuex.Store({
+  state:{}
+  })
+
+main.js
+4.挂载store对象到vue实例中
+import store from './store'
+new Vue({
+	el:...
+	...
+	store
+})
+
+
+
+cmd>vue ui 可以在线生成可配置的vue-cli（需要配置环境变量）
+
+
+
+## 核心概念
+
+### state
+
+提供唯一的公共数据源
+
+访问state数据共有两种方式：
+
+```
+	this.$store.state.xx
+```
+
+	import {mapState} from 'vuex'
+	将当前组件需要的全局数据，映射为当前组件的computed计算属性
+	computed:{
+		...mapState(['count'])
+	}
+
+
+### mutation
+
+按照原本的想法，直接操作this.$store.state
+
+**vuex规定不允许直接操作$store中的数据** 而是通过mutation直接监控所有数据的变化
+
+```
+store.js
+mutations:{
+	fn_name(state,options){...}
+}
+
+
+xxxx.vue
+触发mutations函数的两种方式
+1.this.$store.commit('fn_name',options)
+2.import {mapMutations} from 'vuex'
+methods:{
+	...mapMutations(['fn_name'...])
+}
+```
+
+
+
+### chrome Vue调试器
+
+​	vue.js devtools
+
+### Action
+
+**不要在mutations里写异步操作** 如 setTimeOut. 如果要通过异步操作变更操作，必须要通过Action
+
+**Action中还是会通过触发mutaion的方式变更数据**
+
+```
+store.js
+actions:{
+	addNAsync(context,options){
+		setTImeout(()=>{
+			context.commit('addN',options)
+		},1000)
+	}
+}
+
+xxx.vue两种方式
+//触发Action的
+1. this.$store.dispatch('addNAsync',options)
+2. import {mapActions} from 'vuex'
+methods:{
+	...mapActions(['addNAsync']),
+}
+```
+
+
+
+### Getter
+
+Getter用于对store中的数据进行加工处理形成新的数据（wrap），但并不会修改原数据
+
+1. store 中的数据发生变化，Getter的数据也会跟着变化
+2. 类似计算属性
+
+```
+Getters:{
+	showNum(state){
+		return `当前的数量是【${state.count}】`;
+	}
+}
+
+//使用getters的两种方式
+1.this.$store.getters.名称
+
+2.import {mapGetters} from 'vuex'
+methods:{
+	...mapGetters(['showNum']),
+}
+```
+
+## 案例
+
+![1657458208156](C:\Users\Administrator\Desktop\复习\前端\assets\1657458208156.png)
+
+#  Vue与后台对接
+
+注意点：
+
+1. add之后push了，但不会自动刷新页面，需要监听路由变化 添加watch
 
 # 问题
 
@@ -1576,6 +1903,8 @@ this.$router.go(0) 刷新当前页
 
      
 
-     
+  * <script type='text/html' style='display:block'> ......</script>
 
-     
+    不会解析代码 而是直接显示代码文本
+
+  

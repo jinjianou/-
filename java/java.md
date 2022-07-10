@@ -982,6 +982,8 @@ Parent delegation model is a mechanism(机制) for Java to load classes ()
 
     * 静态内部类 JVM加载内部类的时机其实就跟**加载任何类**（包括顶层类与内部类）**的时机一样**：要表现为是在**第一次主动使用时加载**。主动使用包括new、getstatic、putstatic、invokestatic，以及Class.forName()作为一种特例 
 
+      **和外部类的加载没有必然的关系**
+
     * **枚举单例** 解决线程同步，防止序列化 （枚举类没有构造方法）
 
   * 
@@ -2298,4 +2300,9 @@ finally关键字的实现使用：jsr,jsr_w,ret
   }
   ```
 
+  # 估算k的根号数
+
   
+
+1. x^2-ky^2=1   x/y的解即近似数 先估算第一组(x1,y1)    x2=x1^2+k^2+y1^2;y2=2x1y1
+2. 连分数 形如  x1+1/(x2+1/x3+1/+.....1/k+xn)
