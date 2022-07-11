@@ -126,6 +126,69 @@
   1、将DOM与数据之间的关联进行断开
   2、在当前生命周期函数中是访问不到真实的DOM结构
 
+## 版本
+如何区分项目是vue3还是vue2
+最简单的方法就是在项目中实验一下vue3跟vue2不一样的语法，比如：
+
+1. vue3中的template可以有多个根节点，vue2只能有一个；
+
+2. main.js
+
+```
+//vue3
+import { createApp } from 'vue'
+import App from './App.vue'
+import './index.css'
+
+createApp(App).mount('#app')
+
+//vue2
+import Vue from 'vue'
+import App from './App.vue'
+
+new Vue({
+  render: h => h(App),
+}).$mount('#app')
+
+```
+
+3. `setup`（取代`data` 和`methods`)
+
+4. 新组件 `Teleport`
+
+   新组件 Teleport
+   to代表重新找的父节点，父节点不再是类名为parent的div
+
+   ```
+   <div class="parent">
+   	<Teleport to="body">
+   	       <div class="box" style="position:absolte;z-index:10"></div>
+   	 </Teleport>
+    </div>
+   ```
+
+
+并且vue-cli的版本和vue的版本没有必然联系
+
+   
+## 通过vue ui创建项目
+ vue/cli 3.0之下没有vue ui  等同于 vue create project
+
+1. npm install -g @vue/cli
+
+2. vue -V
+
+   @vue/cli 5.0.8
+
+3. vue ui
+
+   http://localhost:8000/project/select 创建项目
+
+4. 生成项目
+
+   没有config、build等文件夹
+   vue.config.js 自定义配置
+
 ## 指令
 
 指令的属性值预期是单个js表达式（v-for除外）
