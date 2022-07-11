@@ -1857,6 +1857,70 @@ methods:{
 ![1657458208156](C:\Users\Administrator\Desktop\复习\前端\assets\1657458208156.png)
 
 #  Vue与后台对接
+## 监听路由变化
+	方法一：通过 watch
+
+// 监听,当路由发生变化的时候执行
+watch:{
+  $route(to,from){
+    console.log(to.path);
+  }
+},
+或者
+// 监听,当路由发生变化的时候执行
+watch: {
+  $route: {
+    handler: function(val, oldVal){
+      console.log(val);
+    },
+    // 深度观察监听
+    deep: true
+  }
+},
+或者
+// 监听,当路由发生变化的时候执行
+watch: {
+  '$route':'getPath'
+},
+methods: {
+  getPath(){
+    console.log(this.$route.path);
+  }
+}
+方法二：：key是用来阻止“复用”的。
+Vue 为你提供了一种方式来声明“这两个元素是完全独立的——不要复用它们”。只需添加一个具有唯一值的 key 属性即可(Vue文档原话)
+使用computed属性和Date()可以保证每一次的key都是不同的，这样就可以如愿刷新数据了。
+
+<router-view :key="key"></router-view>
+computed: {
+  key() {
+    return this.$route.name !== undefined? this.$route.name +new Date(): this.$route +new Date()
+  }
+}
+方法三：通过 vue-router 的钩子函数 beforeRouteEnter beforeRouteUpdate beforeRouteLeave
+
+
+<script>
+  export default {
+    name: 'app',
+    // 监听,当路由发生变化的时候执行
+    beforeRouteEnter (to, from, next) {
+      // 在渲染该组件的对应路由被 confirm 前调用
+      // 不！能！获取组件实例 `this`
+      // 因为当钩子执行前，组件实例还没被创建
+    },
+    beforeRouteUpdate (to, from, next) {
+      // 在当前路由改变，但是该组件被复用时调用
+      // 举例来说，对于一个带有动态参数的路径 /foo/:id，在 /foo/1 和 /foo/2 之间跳转的时候，
+      // 由于会渲染同样的 Foo 组件，因此组件实例会被复用。而这个钩子就会在这个情况下被调用。
+      // 可以访问组件实例 `this`
+    },
+    beforeRouteLeave (to, from, next) {
+      // 导航离开该组件的对应路由时调用
+      // 可以访问组件实例 `this`
+    }
+</script>
+
 
 注意点：
 
