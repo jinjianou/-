@@ -126,6 +126,69 @@
   1、将DOM与数据之间的关联进行断开
   2、在当前生命周期函数中是访问不到真实的DOM结构
 
+## 版本
+如何区分项目是vue3还是vue2
+最简单的方法就是在项目中实验一下vue3跟vue2不一样的语法，比如：
+
+1. vue3中的template可以有多个根节点，vue2只能有一个；
+
+2. main.js
+
+```
+//vue3
+import { createApp } from 'vue'
+import App from './App.vue'
+import './index.css'
+
+createApp(App).mount('#app')
+
+//vue2
+import Vue from 'vue'
+import App from './App.vue'
+
+new Vue({
+  render: h => h(App),
+}).$mount('#app')
+
+```
+
+3. `setup`（取代`data` 和`methods`)
+
+4. 新组件 `Teleport`
+
+   新组件 Teleport
+   to代表重新找的父节点，父节点不再是类名为parent的div
+
+   ```
+   <div class="parent">
+   	<Teleport to="body">
+   	       <div class="box" style="position:absolte;z-index:10"></div>
+   	 </Teleport>
+    </div>
+   ```
+
+
+并且vue-cli的版本和vue的版本没有必然联系
+
+   
+## 通过vue ui创建项目
+ vue/cli 3.0之下没有vue ui  等同于 vue create project
+
+1. npm install -g @vue/cli
+
+2. vue -V
+
+   @vue/cli 5.0.8
+
+3. vue ui
+
+   http://localhost:8000/project/select 创建项目
+
+4. 生成项目
+
+   没有config、build等文件夹
+   vue.config.js 自定义配置
+
 ## 指令
 
 指令的属性值预期是单个js表达式（v-for除外）
@@ -1857,6 +1920,70 @@ methods:{
 ![1657458208156](C:\Users\Administrator\Desktop\复习\前端\assets\1657458208156.png)
 
 #  Vue与后台对接
+## 监听路由变化
+	方法一：通过 watch
+
+// 监听,当路由发生变化的时候执行
+watch:{
+  $route(to,from){
+    console.log(to.path);
+  }
+},
+或者
+// 监听,当路由发生变化的时候执行
+watch: {
+  $route: {
+    handler: function(val, oldVal){
+      console.log(val);
+    },
+    // 深度观察监听
+    deep: true
+  }
+},
+或者
+// 监听,当路由发生变化的时候执行
+watch: {
+  '$route':'getPath'
+},
+methods: {
+  getPath(){
+    console.log(this.$route.path);
+  }
+}
+方法二：：key是用来阻止“复用”的。
+Vue 为你提供了一种方式来声明“这两个元素是完全独立的——不要复用它们”。只需添加一个具有唯一值的 key 属性即可(Vue文档原话)
+使用computed属性和Date()可以保证每一次的key都是不同的，这样就可以如愿刷新数据了。
+
+<router-view :key="key"></router-view>
+computed: {
+  key() {
+    return this.$route.name !== undefined? this.$route.name +new Date(): this.$route +new Date()
+  }
+}
+方法三：通过 vue-router 的钩子函数 beforeRouteEnter beforeRouteUpdate beforeRouteLeave
+
+
+<script>
+  export default {
+    name: 'app',
+    // 监听,当路由发生变化的时候执行
+    beforeRouteEnter (to, from, next) {
+      // 在渲染该组件的对应路由被 confirm 前调用
+      // 不！能！获取组件实例 `this`
+      // 因为当钩子执行前，组件实例还没被创建
+    },
+    beforeRouteUpdate (to, from, next) {
+      // 在当前路由改变，但是该组件被复用时调用
+      // 举例来说，对于一个带有动态参数的路径 /foo/:id，在 /foo/1 和 /foo/2 之间跳转的时候，
+      // 由于会渲染同样的 Foo 组件，因此组件实例会被复用。而这个钩子就会在这个情况下被调用。
+      // 可以访问组件实例 `this`
+    },
+    beforeRouteLeave (to, from, next) {
+      // 导航离开该组件的对应路由时调用
+      // 可以访问组件实例 `this`
+    }
+</script>
+
 
 注意点：
 

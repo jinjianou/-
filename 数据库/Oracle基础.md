@@ -750,7 +750,7 @@ A table is key-preserved if every key of the table can also be a key of the resu
 
   READ WRITE：可以将事务设置为读/写事务。
 
-  ISOLATION LEVEL： 如果指定，它有两个选项：
+  ISOLATION LEVEL： 与上述参数不兼容,如果指定，它有两个选项：
 
   ​    1.ISOLATION LEVEL SERIALIZE：如果事务尝试更新由另一个事务更新并未提交的资源，则事务将失败。
 
@@ -763,6 +763,15 @@ A table is key-preserved if every key of the table can also be a key of the resu
 oracle不推荐指定事务回滚到指定回滚段，**尽量使用自动回滚**
 
 事务范围 begin end;
+ 查看默认隔离级别
+ 1 SELECT s.sid, s.serial#,
+ 2     CASE BITAND(t.flag, POWER(2, 28))
+ 3        WHEN 0 THEN 'READ COMMITTED'
+ 4        ELSE 'SERIALIZABLE'
+ 5     END AS isolation_level
+ 6  FROM v$transaction t
+ 7  JOIN v$session s ON t.addr = s.taddr AND s.sid = sys_context('USERENV', 'SID');
+
 
 - LOCK TABLE tables IN lock_mode MODE [ WAIT [, integer] | NOWAIT ];
 
@@ -1039,6 +1048,27 @@ select t3.* from (
 - sysdate - to_date(ch,format) 天数+时间戳
 - month_between(dt1,dt2)  月数+时间戳
 
+# 临时表
+## 特点:
+1. session级的临时表，只有在truncate table、session结束才能释放对表的锁定，等所有session释放bounding临时表，才能drop临时表
+2. 临时表不产生redo、undo信息
+   重做日志(redo log)用来保证事务的持久性,用于数据库的崩溃恢复
+   undo log主要记录的是数据的逻辑变化，为了在发生错误时回滚之前的操作，需要将之前的操作都记录下来，然后在发生错误时才可以回滚
+4. **临时表各个session间的数据是不可见的，只能看到自己session的数据**
+
+## 创建
+  1.会话特有的临时表
+  CREATE GLOBAL TEMPORARY <TABLE_NAME> (<column specification>)
+  ON COMMIT PRESERVE ROWS；
+ 
+  2.事务特有的临时表
+  CREATE GLOBAL TEMPORARY <TABLE_NAME> (<column specification>)
+  ON COMMIT DELETE ROWS；
+  CREATE GLOBAL TEMPORARY TABLE MyTempTable
+  所建的临时表虽然是存在的，但是你试一下insert 一条记录然后用别的连接登上去select，记录是空的，明白了吧，我把下面两句话再贴一下：
+  --ON COMMIT DELETE ROWS 说明临时表是事务指定，每次提交后ORACLE将截断表（删除全部行）
+  --ON COMMIT PRESERVE ROWS 说明临时表是会话指定，当中断会话时ORACLE将截断表。
+ 
 # 执行计划
 
 or涉及到多个列的时候，每次select只能选取一个index，如果选择了area，population就需要进行table-scan，即全部扫描一遍，但是使用union就可以解决这个问题
