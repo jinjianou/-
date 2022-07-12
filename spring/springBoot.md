@@ -678,3 +678,89 @@ doc参考 2.4.0的版本 https://docs.spring.io/spring-boot/docs/2.4.0/reference
 * 定制springMVC的自动配置
 
 * springBoot嵌入式servlet容器
+
+
+
+
+
+
+
+# 集成Mybatis
+
+## 依赖
+
+```
+<dependency>
+    <groupId>org.mybatis.spring.boot</groupId>
+    <artifactId>mybatis-spring-boot-starter</artifactId>
+    <version>2.2.2</version>
+</dependency>
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.20</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-jdbc</artifactId>
+</dependency>
+```
+
+
+
+## 配置
+
+```
+spring:
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/houdunren?characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true
+mybatis:
+  mapper-locations: classpath:org/jinjianou/myspringbootstarter1/mapper/*.xml
+  type-aliases-package: org.jinjianou.myspringbootstarter1.domain
+  
+logging:
+  level:
+    root: info
+    org:
+      jinjianou:
+        myspringbootstarter1:
+          dao: debug
+```
+
+
+
+## 接口和mapper文件
+
+1. 接口上增加@Mapper注解
+
+2. 建立配置中的mapper-locations目录，并添加xml(**namespace必须与接口一致**，文件名可以不同)
+
+3. service/controller
+
+   
+
+## 问题
+
+1.  Unknown character set index for field '255' received from server.
+
+   原因：mysql版本高 mysql-connector-java版本过低
+   MYSQL 5.5 之前， UTF8 编码只支持1-3个字节;从MYSQL5.5开始，可支持4个字节UTF编码utf8mb4;
+   升级mysql-connector-java
+   characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true
+
+2. Content-Type: application/xhtml+xml
+
+   原因：早期更多是xml,目前默认先返回xml
+
+   ```
+   produces = {MediaType.APPLICATION_JSON_VALUE}
+   ```
+
+   此外 Accept-Encoding: gzip, deflate, br 
+   Http压缩,属于http内容编码的一种
+   Accept-Language: en-US,en;q=0.9,zh-CN;q=0.7
+   浏览器能够接受 en-US, en 和 zh-CN 三种语言，其中 en-US 的权重最高 ( q 最高为1，最低为 0)，

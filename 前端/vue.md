@@ -170,7 +170,7 @@ new Vue({
 
 并且vue-cli的版本和vue的版本没有必然联系
 
-   
+
 ## 通过vue ui创建项目
  vue/cli 3.0之下没有vue ui  等同于 vue create project
 
@@ -1138,6 +1138,14 @@ module.exports = {
 
 ​		let instance=**axios.create([config])**  可以无参
 
+​		比如 axios.create({
+
+​			baseURL: 'http://localhost:8088',
+
+​			timeout: 2500
+
+​		})
+
 ​		instance.get...
 
 ## 拦截器
@@ -1920,80 +1928,184 @@ methods:{
 ![1657458208156](C:\Users\Administrator\Desktop\复习\前端\assets\1657458208156.png)
 
 #  Vue与后台对接
-## 监听路由变化
+## 监听路由变化的三种方式
 	方法一：通过 watch
+	// 监听,当路由发生变化的时候执行
+	
+	watch:{
+	
+	  $route(to,from){
+	
+	    console.log(to.path);
+	
+	  }
+	
+	},
+	
+	或者
+	
+	// 监听,当路由发生变化的时候执行
+	
+	watch: {
+	
+	  $route: {
+	
+	    handler: function(val, oldVal){
+	
+	      console.log(val);
+	
+	    },
+	
+	    // 深度观察监听
+	
+	    deep: true
+	
+	  }
+	
+	},
+	
+	或者
+	
+	// 监听,当路由发生变化的时候执行
+	
+	watch: {
+	
+	  '$route':'getPath'
+	
+	},
+	
+	methods: {
+	
+	  getPath(){
+	
+	    console.log(this.$route.path);
+	
+	  }
+	
+	}
+	
+	方法二：：key是用来阻止“复用”的。（推荐，通用性的做法，可以在App.vue的标签下配置）
+	
+	Vue 为你提供了一种方式来声明“这两个元素是完全独立的——不要复用它们”。只需添加一个具有唯一值的 key 属性即可(Vue文档原话)
+	
+	使用computed属性和Date()可以保证每一次的key都是不同的，这样就可以如愿刷新数据了。
+	
+	<router-view :key="key"></router-view>
+	
+	computed: {
+	
+	  key() {
+	
+	    return this.route.name !== undefined? this.route.name +new Date(): this.$route +new Date()
+	
+	  }
+	
+	}
+	
+	方法三：通过 vue-router 的钩子函数 beforeRouteEnter beforeRouteUpdate beforeRouteLeave
+	<script>
+	
+	  export default {
+	
+	    name: 'app',
+	
+	    // 监听,当路由发生变化的时候执行
+		//next Function: 一定要调用该方法来 resolve 这个钩子。执行效果依赖 next 方法的调用参数
+		//next(): 进行管道中的下一个钩子。如果全部钩子执行完了，则导航的状态就是 confirmed （确认的）。
+		//next(false): 中断当前的导航。如果浏览器的 URL 改变了（可能是用户手动或者浏览器后退按钮），那么 URL 地址会重置到 from 路由对应的地址。
+		//next('/xx') 或者 next({ path: '/xx' }): 跳转到一个不同的地址
+		//next(error)航会被终止且该错误会被传递给 router.onError() 注册过的回调
+		//一定要确保要调用 next 方法，否则钩子就不会被 resolved。
+		//进入 修改 离开
+	    beforeRouteEnter (to, from, next) {
+	
+		
+			next(vm=>{...}) //这里的vm就是当前组件的实例 相当于this
+	
+	    },
+	
+	    beforeRouteUpdate (to, from, next) {
+	
+	     
+	    },
+	
+	    beforeRouteLeave (to, from, next) {
+	
+	
+	    }
+	
+	</script>
+	
 
-// 监听,当路由发生变化的时候执行
-watch:{
-  $route(to,from){
-    console.log(to.path);
-  }
-},
-或者
-// 监听,当路由发生变化的时候执行
-watch: {
-  $route: {
-    handler: function(val, oldVal){
-      console.log(val);
-    },
-    // 深度观察监听
-    deep: true
-  }
-},
-或者
-// 监听,当路由发生变化的时候执行
-watch: {
-  '$route':'getPath'
-},
-methods: {
-  getPath(){
-    console.log(this.$route.path);
-  }
-}
-方法二：：key是用来阻止“复用”的。
-Vue 为你提供了一种方式来声明“这两个元素是完全独立的——不要复用它们”。只需添加一个具有唯一值的 key 属性即可(Vue文档原话)
-使用computed属性和Date()可以保证每一次的key都是不同的，这样就可以如愿刷新数据了。
-
-<router-view :key="key"></router-view>
-computed: {
-  key() {
-    return this.$route.name !== undefined? this.$route.name +new Date(): this.$route +new Date()
-  }
-}
-方法三：通过 vue-router 的钩子函数 beforeRouteEnter beforeRouteUpdate beforeRouteLeave
 
 
-<script>
-  export default {
-    name: 'app',
-    // 监听,当路由发生变化的时候执行
-    beforeRouteEnter (to, from, next) {
-      // 在渲染该组件的对应路由被 confirm 前调用
-      // 不！能！获取组件实例 `this`
-      // 因为当钩子执行前，组件实例还没被创建
-    },
-    beforeRouteUpdate (to, from, next) {
-      // 在当前路由改变，但是该组件被复用时调用
-      // 举例来说，对于一个带有动态参数的路径 /foo/:id，在 /foo/1 和 /foo/2 之间跳转的时候，
-      // 由于会渲染同样的 Foo 组件，因此组件实例会被复用。而这个钩子就会在这个情况下被调用。
-      // 可以访问组件实例 `this`
-    },
-    beforeRouteLeave (to, from, next) {
-      // 导航离开该组件的对应路由时调用
-      // 可以访问组件实例 `this`
-    }
-</script>
+方式三种：
+
+1. 第一次进入A  调用A.beforeRouteEnter
+2. A->B 先调用A.beforeRouteLeave在调用B.beforeRouteEnter
+3. **父组件对于子组件则没有leave,enter**
 
 
-注意点：
+
+## vue cli项目打包和部署
+
+1. npm run build   生成dist生产目录
+2. 将dist复制到springboot项目的resources/static目录下
+3. 修改index.html中引用的资源文件src/href 为 ${context-path}/dist/...
+4. 访问  http://localhost:port/${context-path}/dist/index.html
+
+
+
+## 项目过程中的注意点：
 
 1. add之后push了，但不会自动刷新页面，需要监听路由
 
+2. 删除的时候需要刷新页面
+
+   1. location.reload()  或者 this.$router.go(0) 缺点就是相当于ctrl+f5 会出现空白页
+
+   2. provide/inject组合
+
+      ```
+      App.vue
+      <template>
+        <div id="app">
+          <router-view v-if="isRouterAlive"/>
+        </div>
+      </template>
+      
+      export default{
+          provide(){
+              return{
+                  reload: this.reload
+               }
+      	},
+      	data(){
+              return{
+                  isRouterAlive:true
+              }
+      	},
+      	methods:{
+              reload(){
+                  this.isRouterAlive=false
+                  this.$nextTick(function(){
+                      this.isRouterAlive=true
+                  })
+              }
+      	}
+      }
+      
+      
+      xxx.vue
+      export default{
+          inject:['reload'],
+          ...
+          this.reload();
+      }
+      
+      ```
 
 
-
-
-## 监听路由的三种方式
 
 
 

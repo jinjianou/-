@@ -166,6 +166,9 @@ public class JerseyConfig extends ResourceConfig {
 
 jersey / 与 mvc 效果不同
 
+**用postman模拟ajax请求**
+header：X-Requested-With:xmlhttprequest
+
 ### 返回Json格式数据
 
 ### utf-8格式
@@ -441,7 +444,10 @@ private String getFirstName() throws UnsupportedEncodingException {
 * json
 
   * Map<String,Object> paramsMap 接收所有
+
   * T t 接收一个T类型javaBean
+
+    不需要加注解 如果加@BeanParam 其bean字段也需要加@FormParm等注解 
 
 * Cookie  header   key: Cookie  value:  xxx=xxxxx
 
