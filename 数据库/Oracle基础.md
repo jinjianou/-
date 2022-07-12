@@ -1322,5 +1322,3 @@ Oracle provides the FOR UPDATE NOWAIT clause in SQL syntax to allow the develope
  select userenv('sid') from dual 获取当前session id
  其他session不可写,除非其commit或rollback
  如果普通的select则可以读,但如果select for update则取决与选中行是否已经被其他session锁定
-
-有索引没索引?
