@@ -464,7 +464,7 @@ rowid 定位记录相对唯一地址值,在该行数据插入到数据库表时�
   - 分区索引 应用到分区表
 
 - 查看
-
+**  表名必须要大写**
   select * from all_indexes where table_name='T1'; //系统视图
   select * from user_ind_columns where table_name='T2'; 
 
@@ -1310,14 +1310,15 @@ end;
 / 
 ```
 
-## for update [of column] | [nowait]
+##select for update [of column] | [nowait]
 
 Oracle provides the FOR UPDATE NOWAIT clause in SQL syntax to allow the developer to lock a set of Oracle rows for the duration of a transaction.
 
-* for update  行级锁 锁表或锁行; 多表时锁住所有表
-* of column 锁住列column对应的表 单表时无区别
+* for update  行级锁 多表时锁住所有相关行
+* of column 锁住涉及到列所在表的行记录
 * wait n|nowait 等待n sec 或不等待; 若锁冲突,则提示报错,资源正忙
 
 其他session能读吗?
-
-有索引没索引 锁表锁行?
+ select userenv('sid') from dual 获取当前session id
+ 其他session不可写,除非其commit或rollback
+ 如果普通的select则可以读,但如果select for update则取决与选中行是否已经被其他session锁定
