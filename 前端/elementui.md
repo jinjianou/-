@@ -957,13 +957,13 @@ rules status-icon 表单验证
       </el-table>
 ```
 
-row-class-name 为row设置className     Function({row, rowIndex})/String
+- row-class-name 为row设置className     Function({row, rowIndex})/String
 
 固定表头 通过:height='xxx' 或 max-height="xxx" 即可实现
 
 
 
-固定列 在需要固定的列上添加fixed
+- 固定列 在需要固定的列上添加fixed
 
 列是否固定在左侧或者右侧，true 表示固定在左侧
 
@@ -971,7 +971,7 @@ true, left, right
 
 
 
-多级表头
+- 多级表头
 
 嵌套 el-table-column，就可以实现多级表头
 
@@ -979,13 +979,13 @@ tableData按照普通table的模式,不需要有层级;因此,合并列不需要
 
 
 
-新增序列号  新增el-table-column type=index
+- 新增序列号  新增el-table-column type=index
 
 自定义 index   when `type=index` is set   number, Function(index):number
 
 
 
-单选数据行样式
+- 单选数据行样式
 
 1. row-click    row, column, event 只能获取选中行数据 样式需要通过event复杂设置
 
@@ -999,7 +999,7 @@ tableData按照普通table的模式,不需要有层级;因此,合并列不需要
 
 
 
-多选 checkbox
+- 多选 checkbox
 
 新增 el-table-column  type="selection"
 
@@ -1017,7 +1017,7 @@ tooltip-effect   tooltip `effect` 属性 dark/light
 
 
 
-排序
+- 排序
 
 sortable 对应列是否可以排序，如果设置为 'custom'，则代表用户希望远程排序，需要监听 Table 的 sort-change 事件
 
@@ -1033,7 +1033,7 @@ formatter 用来格式化内容 Function(row, column, cellValue, row_index)
 
 
 
-筛选
+- 筛选
 
 filters 数据过滤的选项，数组格式，数组中的元素需要有 text 和 value 属性。 Array[{ text, value }]
 filter-method 对每条记录都会比对 Function(value, row, column)
@@ -1044,7 +1044,7 @@ column-key: column 的 key，如果需要使用 filter-change 事件，则需要
 
 
 
-自定义列模板 自定义列的显示内容
+- 自定义列模板 自定义列的显示内容
 
       <template slot-scope="scope">       
       <i class="el-icon-time"></i>       
@@ -1054,13 +1054,13 @@ scope的属性{ row, column, $index }
 
 
 
-展开行
+- 展开行
 
 新增一列 el-table-column type='expand' 配合slot-scope 渲染展开数据
 
 
 
-树状结构
+- 树状结构
 
 row-key  行数据的 Key(tableData的字段);在使用 reserve-selection 功能与显示树形数据时，该属性是必填的 Function(row)/String
 
@@ -1084,13 +1084,13 @@ load when lazy is true  Function(row, treeNode, resolve) 配合hasChildren
 
 
 
-自定义表头
+- 自定义表头
 
 el-table-column配合slot='header'   { column, $index }
 
 
 
-表尾合计行
+- 表尾合计行
 
 show-summary 是否在表尾显示合计行
 
@@ -1100,7 +1100,7 @@ summary-method   自定义的合计计算方法   Function({ columns, data }):ar
 
 
 
-合并行或列
+- 合并行或列
 
 span-method  合并行或列的计算方法 
 
@@ -1122,7 +1122,7 @@ Function({ row, column, rowIndex, columnIndex }):array[rowspan,colspan]/{rowspan
 
 ### NavMenu 导航菜单
 
-顶栏
+- 顶栏
 
 ```\
  <el-menu :default-active="activeIndex"
