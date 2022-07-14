@@ -959,3 +959,254 @@ rules status-icon 表单验证
 
 row-class-name 为row设置className     Function({row, rowIndex})/String
 
+固定表头 通过:height='xxx' 或 max-height="xxx" 即可实现
+
+
+
+固定列 在需要固定的列上添加fixed
+
+列是否固定在左侧或者右侧，true 表示固定在左侧
+
+true, left, right
+
+
+
+多级表头
+
+嵌套 el-table-column，就可以实现多级表头
+
+tableData按照普通table的模式,不需要有层级;因此,合并列不需要设置prop
+
+
+
+新增序列号  新增el-table-column type=index
+
+自定义 index   when `type=index` is set   number, Function(index):number
+
+
+
+单选数据行样式
+
+1. row-click    row, column, event 只能获取选中行数据 样式需要通过event复杂设置
+
+2. highlight-current-row 高亮当前行
+
+   current-change 当表格的当前行发生变化的时候会触发该事件 currentRow, oldCurrentRow
+
+   setCurrentRow  设定某一行为选中行,如果调用时不加参数，则会取消目前高亮行的选中状态   row
+
+
+
+
+
+多选 checkbox
+
+新增 el-table-column  type="selection"
+
+selection-change  当选择项发生变化时会触发该事件   selection
+
+toggleRowSelection 切换某一行的选中状态，如果使用了第二个参数，则是设置这一行选中与否（selected 为 true 则选中）row, selected
+
+clearSelection
+
+show-overflow-tooltip(column) 当内容过长被隐藏时显示 tooltip  default false
+
+tooltip-effect   tooltip `effect` 属性 dark/light
+
+
+
+
+
+排序
+
+sortable 对应列是否可以排序，如果设置为 'custom'，则代表用户希望远程排序，需要监听 Table 的 sort-change 事件
+
+​	case when sortable  is true  sort-method Function(a, b):number
+
+​	case when sortable  is true  && !sort-method   sort-by 按照哪个属性进行排序   String/Array/Function(row, index)
+
+default-sort(table) 默认的排序列的 prop 和顺序。它的`prop`属性指定默认的排序的列，`order`指定默认排序的顺序 (ascending, descending)
+
+sort-change  当表格的排序条件发生变化的时候会触发该事件   { column, prop, order }
+
+formatter 用来格式化内容 Function(row, column, cellValue, row_index)
+
+
+
+筛选
+
+filters 数据过滤的选项，数组格式，数组中的元素需要有 text 和 value 属性。 Array[{ text, value }]
+filter-method 对每条记录都会比对 Function(value, row, column)
+
+​		column['property']就是props  value就是filters里的value
+
+column-key: column 的 key，如果需要使用 filter-change 事件，则需要此属性标识是哪个 column 的筛选条件
+
+
+
+自定义列模板 自定义列的显示内容
+
+      <template slot-scope="scope">       
+      <i class="el-icon-time"></i>       
+      <span style="margin-left: 10px">{{ scope.row.xxx }}</span>      </template>
+
+scope的属性{ row, column, $index }
+
+
+
+展开行
+
+新增一列 el-table-column type='expand' 配合slot-scope 渲染展开数据
+
+
+
+树状结构
+
+row-key  行数据的 Key(tableData的字段);在使用 reserve-selection 功能与显示树形数据时，该属性是必填的 Function(row)/String
+
+tree-props 渲染嵌套数据的配置选项 {children: 'children', hasChildren: 'hasChildren'}
+
+数据格式: {
+
+​	....
+
+children:[{....},{....} ...]
+
+}
+
+default-expand-all  当 Table 包含展开行存在或者为树形表格时有效
+
+lazy 是否懒加载子节点数据
+
+load when lazy is true  Function(row, treeNode, resolve) 配合hasChildren
+
+​	resolve接受children数组
+
+
+
+自定义表头
+
+el-table-column配合slot='header'   { column, $index }
+
+
+
+表尾合计行
+
+show-summary 是否在表尾显示合计行
+
+sum-text 合计行第一列的文本 默认"合计"
+
+summary-method   自定义的合计计算方法   Function({ columns, data }):array
+
+
+
+合并行或列
+
+span-method  合并行或列的计算方法 
+
+Function({ row, column, rowIndex, columnIndex }):array[rowspan,colspan]/{rowspan:xxxx,colspan:xxx}
+
+```
+    spanMethod ({ row, column, rowIndex, columnIndex }) {
+      if (rowIndex % 2 === 0) {
+        if (columnIndex === 0) {
+          return [1, 2];
+        } else if (columnIndex === 1) {
+          return [0, 0];
+        }
+      }
+    },
+```
+
+
+
+### NavMenu 导航菜单
+
+顶栏
+
+```\
+ <el-menu :default-active="activeIndex"
+           background-color="#545c64"
+           text-color="#fff"
+           active-text-color="#ffd04b"
+           mode="horizontal"
+           @select="xxx">
+    <el-menu-item index="1">处理中心</el-menu-item>
+    <el-submenu index="2">
+      <template slot="title">我的工作台</template>
+      <el-menu-item index="2-1">选项1</el-menu-item>
+      <el-menu-item index="2-2">选项2</el-menu-item>
+      <el-submenu index="2-3">
+        <template slot="title">选项3</template>
+        <el-menu-item index="2-3-1">选项3-1</el-menu-item>
+        <el-menu-item index="2-3-2">选项3-2</el-menu-item>
+      </el-submenu>
+    </el-submenu>
+    <el-menu-item index="3"
+                  disabled>消息中心</el-menu-item>
+    <el-menu-item index="4">
+      <el-link href="https://www.ele.me"
+               target="_blank">订单管理</el-link>
+    </el-menu-item>
+  </el-menu>
+```
+
+
+
+## carousel 走马灯/轮播图
+
+
+
+# 案例
+
+主页
+
+```
+<template>
+  <el-container>
+    <el-header>
+      <el-menu :default-active="activeIndex"
+               mode="horizontal"
+               @select="handleSelect">
+        <el-menu-item index="/home"> 首页 </el-menu-item>
+        <el-menu-item index="/user"> 用户管理 </el-menu-item>
+        <el-menu-item index="4"
+                      disabled>
+          <el-link href="https://www.ele.me"
+                   target="_blank">订单管理</el-link>
+        </el-menu-item>
+        <el-button-group style="float: right; margin: 10px 10px">
+          <el-button type="primary"
+                     round
+                     style="margin-right: 5px">登录</el-button>
+          <el-button type="info"
+                     round>注册</el-button>
+        </el-button-group>
+      </el-menu>
+    </el-header>
+    <el-main>
+      <router-view />
+    </el-main>
+  </el-container>
+</template>
+
+<script>
+export default {
+  data () {
+    return {
+      activeIndex: "/home",
+    };
+  },
+  methods: {
+    handleSelect (key) {
+      if (this.$route.path != key) {
+        this.$router.push(key);
+      }
+    },
+  },
+};
+</script>
+
+```
+
+
