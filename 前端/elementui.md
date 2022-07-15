@@ -1154,6 +1154,40 @@ Function({ row, column, rowIndex, columnIndex }):array[rowspan,colspan]/{rowspan
 
 
 ## carousel 走马灯/轮播图
+trigger   指示器(下面的白条)的触发方式 default hover else cilck
+
+```
+    <el-carousel height="150px"
+                 trigger="click"
+                 indicator-position="outside"
+                 arrow="always"
+                 type="card"
+                 direction="vertical">
+      <el-carousel-item v-for="item in 4"
+                        :key="item">
+        <h3 class="small">{{ item }}</h3>
+      </el-carousel-item>
+```
+
+
+
+## Image
+
+图片容器，在保留原生img的特性下，支持懒加载，自定义占位、加载失败等
+
+如果是变量字符串,则必须v-bind
+
+和轮播图结合:
+
+```
+    <el-carousel>
+      <el-carousel-item v-for="url in urls">
+        <el-image fit="fill"
+                  :src="url"></el-image>
+      </el-carousel-item>
+    </el-carousel>
+```
+
 
 
 
@@ -1208,5 +1242,142 @@ export default {
 </script>
 
 ```
+
+# 细节
+- slot & slot-scope
+
+slot(插槽),是组件的一块html模板,这块模板**显示不显示,以及怎么显示**由父组件决定.
+
+分类:
+
+1. 单个插槽(默认插槽)
+
+   ```
+   child:
+   <template>
+       <div class="child">
+           <h3>这里是子组件</h3>
+           <slot></slot>
+       </div>
+   </template>
+   
+   father:
+   <div class="father">
+           <h3>这里是父组件</h3>
+           <child>
+               <div class="tmpl">
+                 <span>菜单1</span>
+                 <span>菜单2</span>
+                 <span>菜单3</span>
+                 <span>菜单4</span>
+                 <span>菜单5</span>
+                 <span>菜单6</span>
+               </div>
+           </child>
+       </div>
+   
+   这里是父组件
+   这里是子组件
+   菜单1 ...
+   ```
+
+2. 具名插槽
+
+   ```
+    <div class="child">
+       // 具名插槽
+       <slot name="up"></slot>
+       <h3>这里是子组件</h3>
+       // 具名插槽
+       <slot name="down"></slot>
+       // 匿名插槽
+       <slot></slot>
+     </div>
+     
+     
+     <div class="father">
+       <h3>这里是父组件</h3>
+       <child>
+         <div class="tmpl" slot="up">
+           <span>菜单-1</span>
+           <span>菜单-2</span>
+           <span>菜单-3</span>
+           <span>菜单-4</span>
+           <span>菜单-5</span>
+           <span>菜单-6</span>
+         </div>
+         <div class="tmpl">
+           <span>菜单->1</span>
+           <span>菜单->2</span>
+           <span>菜单->3</span>
+           <span>菜单->4</span>
+           <span>菜单->5</span>
+           <span>菜单->6</span>
+         </div>
+       </child>
+     </div>
+     
+     这里是父组件
+     菜单-1 ...
+     这里是子组件
+     菜单->1 ...
+   ```
+
+   
+
+3. 作用域插槽
+
+**作用域插槽要求，在slot上面绑定数据**
+
+```
+<template>
+  <div class="child">
+ 
+    <h3>这里是子组件</h3>
+    // 作用域插槽
+    <slot  :data="data"></slot>
+  </div>
+</template>
+ 
+ export default {
+    data: function(){
+      return {
+        data: ['zhangsan','lisi','wanwu','zhaoliu','tianqi','xiaoba']
+      }
+    }
+}
+
+ <div class="father">
+    <h3>这里是父组件</h3>
+   
+    <!--第三次使用：直接显示数据-->
+    <child>
+      <template slot-scope="user">
+       {{user.data}}
+      </template>
+ 
+    </child>
+ 
+    <!--第四次使用：不使用其提供的数据, 作用域插槽退变成匿名插槽-->
+    <child>
+      我就是模板
+    </child>
+  </div>
+  
+  这里是父组件
+  这里是子组件
+  ['zhangsan','lisi','wanwu','zhaoliu','tianqi','xiaoba']
+  这里是子组件
+  我就是模板
+```
+
+- slot 与 slots 的区别：
+
+  slot用来定义插槽，slots相当于refs的用法，用来获取vue组件中定义的slot，实现**内容分发**。
+
+* scoped 定义局部样式
+
+  <style scoped></style>
+
 
 
