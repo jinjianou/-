@@ -885,6 +885,8 @@ label-position 改变表单域标签的位置 right/left/top
 rules status-icon 表单验证
 
 给需要添加的form-item设置prop="xxx"(与form表单字段名称相同)
+prop 对应的不单单是 rules 规则里面的验证项，同时应该对应着我们 <el-form> 的 model 绑定值。也就是说,要跟model的属性字段名相同
+**并且此时是:model而不是v-model**
 
 最简单的 之间在form-item设置required属性
 
@@ -961,7 +963,9 @@ rules status-icon 表单验证
 
 固定表头 通过:height='xxx' 或 max-height="xxx" 即可实现
 
-
+注意: 表头是input时 <template slot="header"
+                  slot-scope="scope">  不添加 slot-scope 会导致input不可编辑
+	
 
 - 固定列 在需要固定的列上添加fixed
 
@@ -1188,8 +1192,99 @@ trigger   指示器(下面的白条)的触发方式 default hover else cilck
     </el-carousel>
 ```
 
+## Dialog 对话框(弹窗)
+
+在**保留当前页面状态**的情况下，告知用户并承载相关操作
+
+遮罩: 遮挡部分图像内容，并显示特定区域的图像内容，相当于一个窗口
+
+```
+ <el-dialog :visible="dialogVisible"
+								title="编辑"
+               :before-close="handleClose">
+      <span>编辑</span>
+      <div lot="footer"
+           style="margin: 50px 30%">
+        <el-button type="primary">确定</el-button>
+        <el-button @click="dialogVisible = false">取消</el-button>
+      </div>
+    </el-dialog>
+    
+    
+    handleClose (done) {
+      this.$confirm("确认编辑")
+        .then((_) => {
+          done();
+        })
+        .catch((_) => { });
+    },
+```
 
 
+
+
+
+## tag 标签
+
+用于标记和选择。
+
+	    
+## Pagination 分页
+
+```
+ <el-pagination layout="prev, pager, next"
+                   small
+                   background
+                   :page-size="20"
+                   :pager-count="13"
+                   :total="1000"></el-pagination>
+```
+
+
+
+layout:
+
+```
+prev 前一页 next 下一页
+
+pager 页码列表
+
+sizes 设置每页显示的页码数量
+
+jumper 跳页
+
+->  之后的元素会靠右显示
+
+total 总条目数
+
+slot
+```
+
+ \>=pager-count 之后的页码折叠
+
+:total 总条数
+
+:page-size 每页数据行
+
+
+
+附加功能:
+
+1. 显示总数 layout="total ..."
+
+2. 设置页数 :page-sizes="[100, 200, 300, 400]"   layout="sizes..."
+
+3. 前往 layout="jumper..."
+
+4. 完整功能
+
+   :current-page
+
+   @current-change   param:当前页
+
+   @size-change param:  每页条数
+
+    
 
 # 案例
 
