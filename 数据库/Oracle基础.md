@@ -270,6 +270,7 @@ SELECT * FROM DBA_TYPES WHERE OWNER IS NULL
   - binary_double
 
   - float  number子类型 
+**   float，double等非标准类型，在DB中保存的是近似值，而Decimal则以字符串的形式保存数值。**
 
 - 日期类型
 
