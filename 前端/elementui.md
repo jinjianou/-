@@ -1283,7 +1283,44 @@ slot
    @current-change   param:当前页
 
    @size-change param:  每页条数
+	    
+### 与后台整合
+	    
 
+```
+<el-table>....</el-table>
+<el-pagination layout="prev, pager, next,total,sizes"
+                   background
+                   :page-size.sync="pageSize"
+                   :pager-count="pagerCount"
+                   :page-sizes="pageSizes"
+                   :total="total"
+                   :current-page.sync="currentPage"
+                   @current-change="currentChange"
+                   @size-change="sizeChange"></el-pagination>
+      
+      pageSize: 1,
+      pagerCount: 3,
+      pageSizes: [1, 3, 5, 10, 20],
+      total: 3,
+      currentPage: 1,
+      
+    currentChange (curPage) {
+      this.currentPage = curPage;
+      this.tabData = this.originTabData.slice(
+        this.pageSize * (curPage - 1),
+        this.pageSize * curPage
+      );
+    },
+    sizeChange (pageSize) {
+      this.pageSize = pageSize;
+      this.currentPage = 1;
+      this.tabData = this.originTabData.slice(0, pageSize);
+    },                
+                   
+```
+
+.sync 解决相应数据改变但table并不会随之变化的问题 如pageSize,currentPage等
     
 
 # 案例
