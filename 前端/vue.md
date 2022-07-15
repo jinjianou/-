@@ -1833,7 +1833,20 @@ cmd>vue ui 可以在线生成可配置的vue-cli（需要配置环境变量）
 	import {mapState} from 'vuex'
 	将当前组件需要的全局数据，映射为当前组件的computed计算属性
 	computed:{
+		//数组形式 获取state属性名相同的值
 		...mapState(['count'])
+	
+		//对象形式
+		...mapState({
+			//mode1
+			count,
+			//mode2
+			count:'xxx',
+			//mode3
+			count(state){
+				return xxx;
+			}
+		})
 	}
 
 
