@@ -212,7 +212,7 @@ public class Application {
 
     ![9](C:\Users\Administrator\Desktop\复习\素材\pic\spring\9.jpg)
 
-## 配置文件
+# 配置文件
 
 doc参考 2.4.0的版本 https://docs.spring.io/spring-boot/docs/2.4.0/reference/html/spring-boot-features.html#boot-features-external-config-enabling
 
@@ -378,21 +378,174 @@ doc参考 2.4.0的版本 https://docs.spring.io/spring-boot/docs/2.4.0/reference
 
         ​    spring boot 2.2之后使用的是 Junit5 org.junit.jupiter.api.Test
 
-  ## 日志系统
+# 日志系统
 
-  ### java
+## java
 
-  ![14](C:\Users\Administrator\Desktop\复习\素材\pic\spring\14.jpg)
+![14](C:\Users\Administrator\Desktop\复习\素材\pic\spring\14.jpg)
 
-  ### SpringBoot
+### 桥接模式
 
-  ![15](C:\Users\Administrator\Desktop\复习\素材\pic\spring\15.jpg)
+	通过提供抽象化和实现化之间的桥接结构，来实现二者的解耦
+一个类存在两个（或多个）独立变化的维度，且这两个（或多个）维度都需要独立进行扩展
+比如点咖啡,有容量(大中小)杯,糖度(加糖,不加糖)等等维度,且独立变化,如果通过类继承,需要2*3类,而且后期随着维度增多,代码量越来越冗余,不够灵活
 
-  ![16](C:\Users\Administrator\Desktop\复习\素材\pic\spring\16.jpg)
+![1](.\springBoot.assets\1.jpg)
+
+- **抽象化(Abstraction)角色**：抽象化给出的定义，并保存一个对实现化对象的引用。
+- **修正抽象化(RefinedAbstraction)角色**：扩展抽象化角色，改变和修正父类对抽象化的定义。
+- **实现化(Implementor)角色**：这个角色给出实现化角色的接口，但不给出具体的实现。必须指出的是，这个接口不一定和抽象化角色的接口定义相同，实际上，这两个接口可以非常不一样。实现化角色应当只给出底层操作，而抽象化角色应当只给出基于底层操作的更高一层的操作。
+- **具体实现化(ConcreteImplementor)角色**：这个角色给出实现化角色接口的具体实现。
+
+抽象化角色就像是一个水杯的手柄，而实现化角色和具体实现化角色就像是水杯的杯身。手柄控制杯身，这就是此模式别名“柄体”的来源。
+
+将咖啡的容量作为**抽象化Abstraction**，而咖啡口味为**实现化Implementor**
+
+1. 创建抽象化部分以及抽象化修正 (容量)
+
+```
+//抽象化Abstraction
+public abstract class Coffee {
+    //桥接实现化
+    protected ICoffeeAdditives additives;
+    public Coffee(ICoffeeAdditives additives){
+        this.additives=additives;
+    }
+    public abstract void orderCoffee(int count);
+}
+//RefinedAbstraction
+abstract class RefinedCoffee extends Coffee{
+
+    public RefinedCoffee(ICoffeeAdditives additives) {
+        super(additives);
+    }
+
+    public void checkQuality(){
+        Random ran = new Random();
+        System.out.println(String.format("%s 添加%s", additives.getClass().getSimpleName(),ran.nextBoolean()?"正常":"太多"));
+    }
+}
+//Specific
+class LargeCoffee extends RefinedCoffee{
+
+    public LargeCoffee(ICoffeeAdditives additives){
+        super(additives);
+    }
+    @Override
+    public void orderCoffee(int count) {
+        System.out.println(String.format("大杯咖啡 %d 杯", count));
+    }
+}
+```
+
+2. 创建实现化 (口味)
+
+   ```
+   //implementor
+   public interface ICoffeeAdditives {
+       void doSomething();
+   }
+   
+   //ConcreteImplementor
+   class  Milk implements ICoffeeAdditives{
+   
+       @Override
+       public void doSomething() {
+           System.out.println("加奶");
+       }
+   }
+   class  Sugar implements ICoffeeAdditives{
+   
+       @Override
+       public void doSomething() {
+           System.out.println("加糖");
+       }
+   }
+   ```
+
+3. 测试
+
+   ```
+           LargeCoffee largeWithMilkCoffee = new LargeCoffee(new Milk());
+           largeWithMilkCoffee.orderCoffee(2);
+           largeWithMilkCoffee.checkQuality();
+   ```
+
+### 适配器模式
+
+适配器模式（Adapter Pattern）是作为两个不兼容的接口之间的桥梁
+这种模式涉及到一个单一的类，该类负责加入独立的或不兼容的接口功能。举个真实的例子，读卡器是作为内存卡和笔记本之间的适配器。您将内存卡插入读卡器，再将读卡器插入笔记本，这样就可以通过笔记本来读取内存卡。比如电源适配器,将220v交流电转成5-20v直流电
+
+适配器模式中涉及到的三个角色：
+
+1、Target（目标抽象类）：目标抽象类定义**客户所需接口**，可以是一个抽象类或接口，也可以是具体类。5-20v
+
+2、Adaptee（适配者类）：适配者即被适配的角色，它定义了一个已经存在的接口，这个接口需要适配，适配者类一般是一个**具体类**，包含了客户希望使用的业务方法。220v
+
+3、Adapter（适配器类）：通过包装一个需要适配的对象(或继承)，把原接口转换成目标接口。电源适配器
+
+### ![2](.\springBoot.assets\2.jpg)
+
+```
+target:
+public interface ElectricalEquipment {
+    void voltage();
+}
+
+adaptee:
+public class Power {
+    public void specificVoltage(){
+        System.out.println("power使用220v");
+    }
+}
+
+ObjectAdapter
+public class PowerAdapter implements ElectricalEquipment{
+    protected Power power;
+    public PowerAdapter(Power power){
+        this.power=power;
+    }
+
+    @Override
+    public void voltage() {
+        power.specificVoltage();
+    }
+}
+
+client:
+        PowerAdapter adapter = new PowerAdapter(new Power());
+        adapter.voltage();
+```
+
+比如 log4j-over-slf4j 桥接方式 app ---> log4j-over-slf4j --->slf4j-api    
+
+​			slf4j(RefinedAbstraction)log4j(ConcreteImplementor)
+
+比如 slf4j-log4j12   slf4j-->slf4j-log4j12-->log4j
+
+## springboot
+
+![15](C:\Users\Administrator\Desktop\复习\素材\pic\spring\15.jpg)
 
 
 
-## Web开发
+![16](C:\Users\Administrator\Desktop\复习\素材\pic\spring\16.jpg)
+
+**JCL的全称为: `Jakarta commons-logging`**, 是**apache**公司提供的一个抽象的日志框架, 并不提供日志功能
+
+**JUL的全称为`java.util.logging`**, 由名字可知，它为jdk自带的一个日志工具
+
+### 日志级别
+
+trace debug info warn error fatal off
+
+```
+ logging.level.<logger-name>=<level>
+```
+
+[logger XML 属性 - Snail90 - 博客园 (cnblogs.com)](https://www.cnblogs.com/snail90/p/10335392.html)
+
+# Web开发
 
 * springMVC快速使用
 
