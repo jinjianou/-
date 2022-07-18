@@ -1222,13 +1222,57 @@ trigger   指示器(下面的白条)的触发方式 default hover else cilck
 
 
 
+## 标签页
+
+分隔内容上有关联但**属于不同类别的数据集合**。 
+
+```
+		<el-tabs v-model="activeName" @tab-click="handleClick" type="border-card" tab-position="left">
+			<el-tab-pane  name="first">
+				<span slot="label"><i class="el-icon-date"></i>用户管理</span>
+			</el-tab-pane>
+			<el-tab-pane label="配置管理" name="second">xx</el-tab-pane>
+			<el-tab-pane label="角色管理" name="third">xx</el-tab-pane>
+			<el-tab-pane label="定时任务补偿" name="fourth">xxx</el-tab-pane>
+		</el-tabs>
+```
+
+
+
+- 增删tab
+
+  editable @edit="handleTabsEdit" 
+
+   handleTabsEdit(targetName, action) 
+
+  ​	action: add,remove
+
+
+
+## Card 卡片
+
+将信息聚合在卡片容器中展示 、
+
+```
+		<el-card>
+			<!-- head -->
+			<div slot="header" class="clearfix">
+				<span>卡片内容</span>
+				<el-button style="float: right;" type="text">操作按钮</el-button>
+			</div>
+			<div v-for="i in 4" :key="i">
+				{{'列表内容'+i}}
+			</div>
+		</el-card>
+```
+
 
 
 ## tag 标签
 
 用于标记和选择。
 
-	    
+
 ## Pagination 分页
 
 ```
@@ -1285,7 +1329,7 @@ slot
    @size-change param:  每页条数
 	    
 ### 与后台整合
-	    
+
 
 ```
 <el-table>....</el-table>

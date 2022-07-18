@@ -35,6 +35,31 @@ BeanFactory:反射创建对象，并反射配置属性并在生命周期内进�
 
 ![6](C:\Users\Administrator\Desktop\复习\素材\pic\spring\6.jpg)
 
+
+
+## 为什么使用sb
+
+1. 使开发变得简单，提供了丰富的可快速集成的解决方案
+2. 使配置变得简单，提供了丰富的 Starters 
+3.  使部署变得简单，其本身内嵌启动容器 ，且结合jekins、dokcer自动化运维变得简单
+4.  使监控变得简单，自带监控组件Actuator 
+
+## 四大核心特性
+
+1. 自动装配： 简单配置甚至0配置即可运行项目
+
+   模块之间基于接口编程（而非实现类硬编码）
+
+   通过spi机制（为某个接口寻找服务实现）实现
+
+   
+
+2. 起步依赖：场景启动器
+
+3. Actuator：指标监控
+
+4. cli
+
 # Hello world
 
 ```java
@@ -86,63 +111,286 @@ public class Application {
 }
 ```
 
-* 热部署
+## 依赖文件分析
 
-  深层原理是使用了两个ClassLoader，一个Classloader加载那些不会改变的类（第三方Jar包），另一个ClassLoader加载会更改的类，称为restart ClassLoader,这样在有代码更改的时候，原来的restart ClassLoader 被丢弃，重新创建一个restart ClassLoader，由于需要加载的类相比较少，所以实现了较快的重启时间。 
+```
+spring-boot-starter-parent
+	build>resources&pluginManagement  不涉及dependencies
+	<resource>
+        <directory>${basedir}/src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>**/application*.yml</include>
+          <include>**/application*.yaml</include>
+          <include>**/application*.properties</include>
+        </includes>
+      </resource>
+
+spring-boot-dependencies---parent of spring-boot-starter-parent
+	dependencyManagement+pluginManagement
+
+spring-boot-starter 四大核心特性之一
+	dependencies:spring-boot+spring-boot-autoconfigure+spring-boot-starter-logging+jakarta.annotation-api+spring-core+snakeyaml
+
+	stater组件 以功能为维度，维护对应jar包的版本依赖；导入组件时，将jar包所有依赖导入
+	官方组件 spring-boot-starter-xxx
+	第三方  xxx-spring-boot-starter
+	
+spring-boot-starter-web
+	dependencies:spring-boot-starter+spring-boot-starter-json+spring-boot-starter-tomcat+spring-web+spring-webmvc
+```
+
+1.  basedir是maven内置属性
+
+   ```
+   ${project.build.sourceDirectory}:项目的主源码目录，默认为src/main/java/.
+   ${project.build.testSourceDirectory}:项目的测试源码目录，默认为/src/test/java/.
+   ${project.build.directory}:项目构建输出目录，默认为target/.
+   ${project.outputDirectory}:项目主代码编译输出目录，默认为target/classes/.
+   ${project.testOutputDirectory}:项目测试代码编译输出目录，默认为target/testclasses/.
+   ${project.groupId}:项目的groupId.
+   ${project.artifactId}:项目的artifactId.
+   ${project.version}:项目的version,于${version}等价 
+   ${project.build.finalName}:项目打包输出文件的名称，默认 为${project.artifactId}${project.version}.
+   ```
+
+   \${project.basedir} 同${basedir} 项目根目录即含有pom.xml文件的目录 
+
+     <properties> 是自定义属性
+
+2. 不添加 <filtering>true</filtering>
+
+   打包时能替换文件名，但不能替换文件里面的标识符，启动项目时报错
+
+   如<include>application-de${active_yml}.yml</include>  ->  application-dev.yml
+
+
+
+​	添加 <filtering>true</filtering>
+
+​	打包时能替换文件名，也能替换文件里面的标识符
+
+## 热部署
+
+深层原理是使用了两个ClassLoader，**一个Classloader加载那些不会改变的类（第三方Jar包）**，**另一个ClassLoader加载会更改的类**，称为restart ClassLoader,这样在有代码更改的时候，原来的restart ClassLoader 被丢弃，重新创建一个restart ClassLoader，由于需要加载的类相比较少，所以实现了较快的重启时间。 
+
+```
+<!--添加热部署-->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-devtools</artifactId>
+    <optional>true</optional>
+    <scope>true</scope>
+</dependency>
+```
+
+```
+<plugin>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-maven-plugin</artifactId>
+    <configuration>
+    <!--fork:如果没有该项配置,整个devtools不会起作用-->
+    <!--复制当前进程（包括进程在内存里的堆栈数据）为1个新的镜像  两个进程是互不影响-->
+        <fork>true</fork>
+    </configuration>
+ </plugin>
+```
+
+File-settings-compiler 勾选 Build Project automatically
+
+ctrl+shift+alt+/ 选中 registry 勾选 Compiler autoMake allow when app run 
+
+在新的页面刷新
+
+## @SpringApplication分析
+
+![7](C:\Users\Administrator\Desktop\复习\素材\pic\spring\7.jpg)
+
+* AutoConfigurationImportSelector implements DeferredImportSelector（延迟导入选择器）
 
   ```
-  <!--添加热部署-->
-  <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-devtools</artifactId>
-      <optional>true</optional>
-      <scope>true</scope>
-  </dependency>
+  @Import
+  	Indicates one or more component classes to import  equivalent to the <import/> element in Spring XML
+  ImportSelector 
+  determine which @Configuration class(es) should be imported based on a given selection criteria
+  	selectImports(AnnotationMetadata importingClassMetadata) class(es) should be imported based on the AnnotationMetadata of the importing @Configuration class.
   ```
 
   ```
-  <plugin>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-maven-plugin</artifactId>
-      <configuration>
-      <!--fork:如果没有该项配置,整个devtools不会起作用-->
-      <!--复制当前进程（包括进程在内存里的堆栈数据）为1个新的镜像  两个进程是互不影响-->
-          <fork>true</fork>
-      </configuration>
-   </plugin>
+  @Override
+  public String[] selectImports(AnnotationMetadata annotationMetadata) {
+     // 判断SpringBoot是否开启自动配置
+     if (!isEnabled(annotationMetadata)) {
+        return NO_IMPORTS;
+     }
+     // 获取需要被引入的自动配置信息
+     AutoConfigurationEntry autoConfigurationEntry = getAutoConfigurationEntry(annotationMetadata);
+     return StringUtils.toStringArray(autoConfigurationEntry.getConfigurations());
+  }
+  
   ```
 
-  File-settings-compiler 勾选 Build Project automatically
+  
 
-  ctrl+shift+alt+/ 选中 registry 勾选 Compiler autoMake allow when app run 
+  isEnabled
 
-  在新的页面刷新
+  ```
+  protected boolean isEnabled(AnnotationMetadata metadata) {
+     if (getClass() == AutoConfigurationImportSelector.class) {
+        // 若调用该方法的类是AutoConfigurationImportSelector，那么就获取EnableAutoConfiguration.ENABLED_OVERRIDE_PROPERTY的值，默认为true
+        return getEnvironment().getProperty(EnableAutoConfiguration.ENABLED_OVERRIDE_PROPERTY, Boolean.class, true);
+     }
+     return true;
+  }
+  
+  ```
 
-* @SpringApplication分析
+  EnableAutoConfiguration.ENABLED_OVERRIDE_PROPERTY= "spring.boot.enableautoconfiguration"; 
 
-  ![7](C:\Users\Administrator\Desktop\复习\素材\pic\spring\7.jpg)
+  
 
-* AutoConfigurationImportSelector implements DeferredImportSelector
+  getAutoConfigurationEntry
 
-  任何实现DeferredImportSelector会先判断是否重写了getImportGroup
+  ```
+  protected AutoConfigurationEntry getAutoConfigurationEntry(AnnotationMetadata annotationMetadata) {
+     // 判断是否开启自动配置
+     if (!isEnabled(annotationMetadata)) {
+        return EMPTY_ENTRY;
+     }
+     // 获取@EnableAutoConfiguration注解的属性
+     AnnotationAttributes attributes = getAttributes(annotationMetadata);
+     // 从spring.factories文件中获取配置类的全限定名数组
+     List<String> configurations = getCandidateConfigurations(annotationMetadata, attributes);
+     // 去重
+     configurations = removeDuplicates(configurations);
+     // 获取注解中exclude或excludeName排除的类集合
+     Set<String> exclusions = getExclusions(annotationMetadata, attributes);
+     // 检查被排除类是否可以实例化，是否被自动配置所使用，否则抛出异常
+     checkExcludedClasses(configurations, exclusions);
+     // 去除被排除的类
+     configurations.removeAll(exclusions);
+     // 使用spring.factories配置文件中配置的过滤器对自动配置类进行过滤
+     configurations = getConfigurationClassFilter().filter(configurations);
+     // 抛出事件
+     fireAutoConfigurationImportEvents(configurations, exclusions);
+     return new AutoConfigurationEntry(configurations, exclusions);
+  }
+  
+  ```
 
-  * 否 走SelectImports方法
-  * 是 走getImportGroup返回的Class<? extends Group>类的proecess->SelectImports方法
+  
 
-* proecess的getAutoConfigurationEntry方法
+  getCandidateConfigurations
 
-  ![13](C:\Users\Administrator\Desktop\复习\素材\pic\spring\13.jpg)
-
-  ```java
+* ```java
   String factoryTypeName = factoryType.getName();
           return (List)loadSpringFactories(classLoaderToUse).getOrDefault(factoryTypeName, Collections.emptyList());
   ```
 
   loadSpringFactories读到了spring-boot/spring-boot-autoConfigure/spring-beans下 META-INF/factories
 
+  ​	Enumeration<URL> urls = classLoader.getResources(FACTORIES_RESOURCE_LOCATION);
+
   通过getOrDefault过滤类型为factoryTypeName即EnableAutoConfiguration
 
-  最后在进行一次过滤getConfigurationClassFilter().filter(configurations) 根据我们添加的starter判断
+  
+
+  removeDuplicates
+
+  ```
+  return new ArrayList<>(new LinkedHashSet<>(list));
+  ```
+
+  
+
+  getExclusions
+
+  ```
+  		excluded.addAll(asList(attributes, "exclude"));
+  		excluded.addAll(Arrays.asList(attributes.getStringArray("excludeName")));
+  		excluded.addAll(getExcludeAutoConfigurationsProperty());
+  ```
+
+  EnableAutoConfiguration的exclude&excludeName属性 以及spring.autoconfigure.exclude
+
+  
+
+  checkExcludedClasses
+
+  ```
+  for (String exclusion : exclusions) {
+     if (ClassUtils.isPresent(exclusion, getClass().getClassLoader()) && !configurations.contains(exclusion)) {
+        invalidExcludes.add(exclusion);
+     }
+  }
+  		if (!invalidExcludes.isEmpty()) {
+  		//throw error
+  			handleInvalidExcludes(invalidExcludes);
+  		}
+  ```
+
+  
+
+  getConfigurationClassFilter().filter(configurations);
+
+  ```
+  			List<AutoConfigurationImportFilter> filters = getAutoConfigurationImportFilters();
+  				return SpringFactoriesLoader.loadFactories(AutoConfigurationImportFilter.class, this.beanClassLoader);
+  
+  
+  this.configurationClassFilter = new 
+  			ConfigurationClassFilter(this.beanClassLoader, filters);
+  
+  return this.configurationClassFilter
+  
+  filter
+  for (AutoConfigurationImportFilter filter : this.filters) {
+  				boolean[] match = filter.match(candidates, this.autoConfigurationMetadata);
+  				for (int i = 0; i < match.length; i++) {
+  					if (!match[i]) {
+  						candidates[i] = null;
+  						skipped = true;
+  					}
+  				}
+  			}
+  			
+  			if (!skipped) {
+  				return configurations;
+  			}
+  			List<String> result = new ArrayList<>(candidates.length);
+  			for (String candidate : candidates) {
+  				if (candidate != null) {
+  					result.add(candidate);
+  				}
+  			}
+  			return result;
+  ```
+
+  this.autoConfigurationMetadata来自META-INF/spring-autoconfigure-metadata.properties
+
+  最后在进行一次过滤getConfigurationClassFilter().filter(configurations) 
+
+  ```
+  org.springframework.boot.autoconfigure.AutoConfigurationImportFilter=\
+  org.springframework.boot.autoconfigure.condition.OnBeanCondition,\
+  org.springframework.boot.autoconfigure.condition.OnClassCondition,\
+  org.springframework.boot.autoconfigure.condition.OnWebApplicationCondition
+  ```
+
+  根据我们添加的starter和上述condition filter
+
+  注意：Enumeration<URL> urls = classLoader.getResources(FACTORIES_RESOURCE_LOCATION);
+
+  ​		拿到的是文件路径 如jar:file:/C:/Users/Administrator/.m2/repository/io/springfox/springfox-boot-starter/3.0.0/springfox-boot-starter-3.0.0.jar!/META-INF/spring.factories
+
+  ​	xxx.factories相当于  xxx.properties
+
+
+
+
+​	fireAutoConfigurationImportEvents(configurations, exclusions);
+
+
 
 * FilterType枚举值分析
 
@@ -170,6 +418,8 @@ public class Application {
   
   @EnableConfigurationProperties(ServerProperties.class)
   Enable support for @ConfigurationProperties annotated beans
+  @ConfigurationProperties
+  if you want to bind and validate some external Properties
   
   @ConditionalOnxxx
   	@Condition(xxx.class)
@@ -195,7 +445,9 @@ public class Application {
 
   ```jav
   @ConfigurationProperties(prefix = "server", ignoreUnknownFields = true)
-  public class ServerProperties {
+  public class ServerProperties 
+  默认读取 Spring's Environment 如application.xxx
+  可以通过@PropertySource注解指定自定义配置文件路径 添加到 Spring's Environment. 
   ```
 
   ```
@@ -242,9 +494,50 @@ doc参考 2.4.0的版本 https://docs.spring.io/spring-boot/docs/2.4.0/reference
         address: 浙江
     ```
 
-* 加载顺序 
+  ### profile的配置与激活
 
-  * So the first block will copy all `application*.(yml|yaml|properties)` files to the output folder, and will interpolate variables. And the second block will copy all other files, without interpolating variables. 
+  1. 配置
+
+     - 在application中配置
+
+       spring.profiles.active=dev  # 对应application-dev文件
+
+       
+
+       在cspring-boot-maven-plugin  configuration中配置(可选)
+
+       ```
+       <build>
+               <plugins>
+                   <plugin>
+                       <groupId>org.springframework.boot</groupId>
+                       <artifactId>spring-boot-maven-plugin</artifactId>
+                       <configuration>
+                           <profiles>
+                               <profile>dev</profile>
+                               <profile>test</profile>
+                           </profiles>
+                       </configuration>
+                   </plugin>
+               </plugins>
+           </build>
+       ```
+
+       
+
+  2. 激活(spring)
+
+     虚拟机参数 在VM options指定: -Dspring.profiles.active=dev 
+
+     命令行参数 java-jar xxx.jar --spring.profiles.active=dev 
+
+     
+
+     mvn spring-boot:run -Dspring-boot.run.profiles=test
+
+  ###  加载顺序 
+
+  * So the first block will copy all `application*.(yml|yaml|properties)` files to the output folder, and will interpolate(插入)variables. And the second block will copy all other files, without interpolating variables. 
 
     ```
     <resource>
@@ -266,11 +559,19 @@ doc参考 2.4.0的版本 https://docs.spring.io/spring-boot/docs/2.4.0/reference
     </resource>
     ```
 
-  * first由jar包外向jar包内进行寻找，second  config/  third优先加载待profile的(application-{profile}.*,**profile需要初始的配置如application.yml开启选择的profile**)，再加载不带profile的，
+  * first由jar包外向jar包内进行寻找，second  resources/config/  third优先加载待profile的(application-{profile}.*,**profile需要初始的配置如application.yml开启选择的profile**)，再加载不带profile的，
 
-    同一级别的加载顺序和版本有关  2.1.4 properties>yml>yaml
+    同一级别的加载顺序和版本有关  
+
+    2.1.4 properties>yml>yaml
+
+    2.4.0   yaml>yml>properties
+
+    
 
     一般采用resources/resources+config/命令行（如--spring.config.location=D:\config/ 不会跟默认的配置文件互补）这三种方式
+
+    ​			
 
   * 外部配置的优先级
 

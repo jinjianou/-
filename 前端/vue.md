@@ -1917,8 +1917,11 @@ methods:{
 
 Getter用于对store中的数据进行加工处理形成新的数据（wrap），但并不会修改原数据
 
-1. store 中的数据发生变化，Getter的数据也会跟着变化
+1. store 中的数据发生变化，Getter的数据也会跟着变化（**反之亦然**）
+
 2. 类似计算属性
+
+   
 
 ```
 Getters:{
@@ -1940,8 +1943,361 @@ methods:{
 
 ![1657458208156](C:\Users\Administrator\Desktop\复习\前端\assets\1657458208156.png)
 
+TodoList.vue
+
+```
+<template>
+  <div>
+		<el-form :model="todoList.searchForm" inline >
+			<el-form-item>
+			<el-input v-model="todoList.searchForm.takName" placeholder="请输入任务" ></el-input>
+			</el-form-item>
+			<el-form-item>
+			<el-button type="primary" @click="addTask">添加事项</el-button>
+			</el-form-item>
+		</el-form>
+
+		<div id="list">
+			<li v-for="(task,index) in showTasks()" :key="index">
+				<el-checkbox v-model="task.checked" @change="checkedChange(task)">{{task.content}}</el-checkbox>
+				<el-button type="text" @click="deleteTask(task)">删除</el-button>
+			</li>
+		
+			<li>
+				<span>{{uncompleteTasks.length}}条剩余</span>
+
+				<el-button-group>
+					<el-button v-for="btn in todoList.buttons" :type="todoList.activeBtn==btn.id?'primary':''" 
+										plain @click="changeBtn(btn)" :key="btn.id">{{btn.label}} </el-button>
+				</el-button-group>
+
+				<el-button @click="clearCompleteTasks" type="text">清除已完成</el-button >
+
+			</li>
+		</div>
+
+  </div>
+</template>
+
+<script>
+	import {mapState} from 'vuex'
+	import {mapMutations} from 'vuex'
+	import {mapGetters} from 'vuex'
+export default {
+  data(){
+		return {
+
+		}
+	},
+	computed:{
+		...mapState({
+			completeTasks(state){
+			 return state.todoList.completeTasks;
+			},
+			uncompleteTasks(state){
+			 return state.todoList.uncompleteTasks;
+			},
+			todoList(state){
+				return state.todoList;
+			}
+		})
+	},
+	methods:{
+		...mapMutations(['addTask','changeBtn','clearCompleteTasks','checkedChange','searchTask','deleteTask']),
+		...mapGetters(['showTasks'])
+	},
+	// watch:{
+	// 	completeTasks:{
+	// 		handler: function(val){
+				
+	// 	},
+	// 	deep:true,
+	// 	}
+	// },
+	// uncompleteTasks:{
+	// 		handler: function(val){
+				
+	// 	},
+	// 	deep:true,
+	// 	}
+	// },
+}
+</script>
+
+<style>
+	div#list{
+		margin-top: 10px;
+	}
+	li {
+		Margin-top:-5px;
+		border: 3px solid #F2F4F5;
+		background-color: white;
+		padding: 20px 40px;
+		list-style-type: none;
+	}
+</style>
+
+```
+
+store.js
+
+```
+import Vue from 'vue'
+import Vuex from 'vuex'
+
+Vue.use(Vuex)
+
+export default new Vuex.Store({
+	state:{
+		record:{},
+		todoList:{
+			searchForm:{
+				takName:'',
+			},
+			completeTasks:[{content:'aaa',checked:true}],
+			uncompleteTasks:			[{content:'bbb',checked:false},
+				{content:'ccc',checked:false}],
+			//allTasks+showTasks 通过getters实现关联变更
+			// allTasks:[{content:'aaa',checked:true},
+			// 					{content:'bbb',checked:false},
+			// 					{content:'ccc',checked:false}],
+			// showTasks:[{content:'aaa',checked:true},
+			// 					{content:'bbb',checked:false},
+			// 					{content:'ccc',checked:false}],
+			buttons:[
+				{id:1,label:'全部'},
+				{id:2,label:'未完成'},
+				{id:3,label:'已完成'},
+			],
+			activeBtn:1,
+
+		},
+	},
+	mutations:{
+		changeRecord(state,record){
+			state.record=record;
+		},
+		addTask(state){
+			const tl=state.todoList
+			let newTask={content:state.todoList.searchForm.takName,checked:false};
+			tl.uncompleteTasks.push(newTask);
+		},
+		changeBtn(state,btn){
+			const cur=btn.id;
+			if(state.todoList.activeBtn!=cur){
+				state.todoList.activeBtn=cur;
+			}
+			// const tl=state.todoList;
+			// switch (prev) {
+			// 	case 1:
+			// 		[...tl.showTasks]=tl.allTasks;
+			// 		break;
+			// 		case 2:
+			// 			[...tl.showTasks]=tl.uncompleteTasks;
+			// 			break;
+			// 			case 3:
+			// 				[...tl.showTasks]=tl.completeTasks;
+			// 				break;
+			// 	default:
+			// 		break;
+			// }
+			
+		},
+		clearCompleteTasks(state){
+			state.todoList.completeTasks=[]; //length=0并不会刷新页面数据
+		},
+	
+		checkedChange(state,task){
+			Array.prototype.remove=function(arr,task){
+				let ind=this.findIndex(element=>(element.content==task.content)&&(element.checked==task.checked));
+				if(ind!=-1){
+					this.splice(ind,1); //delete arr[ind] length并没有变 只是ind的元素变成empty
+					arr.push(task);
+					return;
+				}
+				ind=arr.findIndex(element=>(element.content==task.content)&&(element.checked==task.checked));
+				if(ind=-1){
+					arr.splice(ind,1); 
+					this.push(task);
+				}
+			}
+			//对自定义的remove而言，uncompleteTasks和completeTasks是对称的，
+			state.todoList.uncompleteTasks.remove(state.todoList.completeTasks,task);
+
+		},
+		searchTask(state){
+			const taskName=state.todoList.searchForm.takName;
+			//error
+			this.getters.showTasks=function(){
+				return this.filter(task=>task.content.includes(taskName));  //store.getters.getter 不用调用且read-oinly
+			}
+		},
+		deleteTask(state,task){
+			Array.prototype.removeTask=function(arr,task){
+				let ind=this.findIndex(element=>(element.content==task.content)&&(element.checked==task.checked));
+				if(ind!=-1){
+					this.splice(ind,1); //delete arr[ind] length并没有变 只是ind的元素变成empty
+					return;
+				}
+				ind=arr.findIndex(element=>(element.content==task.content)&&(element.checked==task.checked));
+				if(ind=-1){
+					arr.splice(ind,1); 
+				}
+			}
+			state.todoList.uncompleteTasks.removeTask(state.todoList.completeTasks,task);
+		}
+	},
+	actions:{
+		changeRecordAsyn(context,record){
+			scontext.commit('changeRecord',record)
+		}
+	},
+	getters:{
+		showTasks(state){
+			switch (state.todoList.activeBtn) {
+				case 1:
+					return [...state.todoList.uncompleteTasks,...state.todoList.completeTasks];
+				case 2:
+					return state.todoList.uncompleteTasks;
+					case 3:
+						return state.todoList.completeTasks;
+			}
+		},
+		setRemove(state,task){
+			Array.prototype.remove=function(arr,task){
+				let ind=this.findIndex(element=>(element.content==task.content)&&(element.checked==task.checked));
+				if(ind!=-1){
+					this.splice(ind,1); //delete arr[ind] length并没有变 只是ind的元素变成empty
+					arr.push(task);
+					return;
+				}
+				ind=arr.findIndex(element=>(element.content==task.content)&&(element.checked==task.checked));
+				if(ind=-1){
+					arr.splice(ind,1); 
+					this.push(task);
+				}
+			}
+		},
+	}
+})
+```
+
+
+
+尝试优化：
+
+既然已经有checked字段了，就**不用将completeTasks和uncompleteTasks放在两个数组**
+
+```
+import Vue from 'vue'
+import Vuex from 'vuex'
+
+Vue.use(Vuex)
+
+export default new Vuex.Store({
+	state:{
+		record:{},
+		todoList:{
+			searchForm:{
+				takName:'',
+			},
+
+			tasks:[{content:'aaa',checked:true},
+								{content:'bbb',checked:false},
+								{content:'ccc',checked:false}],
+
+			buttons:[
+				{id:1,label:'全部'},
+				{id:2,label:'未完成'},
+				{id:3,label:'已完成'},
+			],
+			activeBtn:1,
+
+		},
+	},
+	mutations:{
+		addTask(state){
+			let newTask={content:state.todoList.searchForm.takName,checked:false};
+			state.todoList.tasks.push(newTask);
+		},
+		changeBtn(state,btn){
+			const cur=btn.id;
+			if(state.todoList.activeBtn!=cur){
+				state.todoList.activeBtn=cur;
+			}
+			
+		},
+		clearCompleteTasks(state){
+			state.todoList.tasks=state.todoList.tasks.filter(task=>task.checked!=true);
+		},
+	
+		deleteTask(state,index){
+			state.todoList.tasks.splice(index,1);
+		}
+	},
+	actions:{
+	},
+	getters:{
+		showTasks(state){
+			switch (state.todoList.activeBtn) {
+				case 1:
+					return state.todoList.tasks;
+				case 2:
+					return state.todoList.tasks.filter(task=>task.checked==false);
+				case 3:
+					return state.todoList.tasks.filter(task=>task.checked==true);
+			}
+		},
+		uncompleteTasksSize(state){
+			return state.todoList.tasks.filter(task=>task.checked==false).length;
+		}
+	}
+})
+```
+
+```
+<template>
+  <div>
+		<el-form :model="todoList.searchForm" inline >
+			<el-form-item>
+			<el-input v-model="todoList.searchForm.takName" placeholder="请输入任务" ></el-input>
+			</el-form-item>
+			<el-form-item>
+			<el-button type="primary" @click="addTask">添加事项</el-button>
+			</el-form-item>
+		</el-form>
+
+		<div id="list">
+			<li v-for="(task,index) in showTasks()" :key="index">
+				<el-checkbox v-model="task.checked" >{{task.content}}</el-checkbox>
+				<el-button type="text" @click="deleteTask(index)">删除</el-button>
+			</li>
+		
+			<li>
+				<span>{{uncompleteTasksSize()}}条剩余</span>
+
+				<el-button-group>
+					<el-button v-for="btn in todoList.buttons" :type="todoList.activeBtn==btn.id?'primary':''" 
+										plain @click="changeBtn(btn)" :key="btn.id">{{btn.label}} </el-button>
+				</el-button-group>
+
+				<el-button @click="clearCompleteTasks" type="text">清除已完成</el-button >
+
+			</li>
+		</div>
+
+  </div>
+</template>
+```
+
+
+
 #  Vue与后台对接
+
 ## 监听路由变化的三种方式
+
+**注意： 当监听对象是一个object时，必须添加deep=true即深度监听，否则对象属性值发生变化（引用未变）并不会监听的到**
+
 	方法一：通过 watch
 	// 监听,当路由发生变化的时候执行
 	
@@ -2031,24 +2387,27 @@ methods:{
 		//一定要确保要调用 next 方法，否则钩子就不会被 resolved。
 		//进入 修改 离开
 	    beforeRouteEnter (to, from, next) {
-	
-		
+
+
+​		
 			next(vm=>{...}) //这里的vm就是当前组件的实例 相当于this
 	
 	    },
 	
 	    beforeRouteUpdate (to, from, next) {
-	
-	     
+
+
+​	     
 	    },
 	
 	    beforeRouteLeave (to, from, next) {
-	
-	
+
+
+​	
 	    }
 	
 	</script>
-	
+
 
 
 
