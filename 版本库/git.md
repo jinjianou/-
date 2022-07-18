@@ -157,14 +157,14 @@ git remote add  <name 如origin> <远程仓库地址> 增加远程仓库
   - 工作目录中当前文件和暂存区域快照之间的差异   git diff
   - 比对已暂存文件与最后一次提交的文件差异 git diff --stage
 
-- 提交 
+## 提交 
 
-  git commit -m "version1"
+git commit -m "version1"
 
-  - git commit -a 
+- git commit -a 
 
-    跳过暂存区(git add) 自动把所有已经**跟踪过的文件**暂存起来一并提交 
-
+  跳过暂存区(git add) 自动把所有已经**跟踪过的文件**暂存起来一并提交 
+  
 - 移除文件（从暂存区删除）
 
   - 工作目录存在 git rm --cached a.txt
@@ -217,70 +217,82 @@ git remote add  <name 如origin> <远程仓库地址> 增加远程仓库
 
   - 限制输出选项
 
-- 撤销操作
+## 撤销操作
 
-  - 提交完了才发现漏掉了几个文件没有添加，或者提交信息写错了  git commit --amend
+- 提交完了才发现漏掉了几个文件没有添加，或者提交信息写错了  git commit --amend
 
-    ```
-    $ git commit -m 'initial commit'
-    $ git add forgotten_file
-    $ git commit --amend
-    ```
+  ```
+  $ git commit -m 'initial commit'
+  $ git add forgotten_file
+  $ git commit --amend
+  ```
 
-    最终你只会有一个提交 
+  最终你只会有一个提交 
 
-  - 取消暂存区的文件
+- 取消暂存区的文件
 
-    ```
-    git reset HEAD file
-    ```
+  ```
+  git reset HEAD file
+  ```
 
-  - 取消对文件的修改，恢复到上一次提交（或clone时的样子）
+- 取消对文件的修改，恢复到上一次提交（或clone时的样子）
 
-    git checkout file
+  git checkout file
 
-    一般是已追踪但还在工作区（在暂存区先撤回工作目录）
+  一般是已追踪但还在工作区（在暂存区先撤回工作目录）
 
-- 远程仓库
+## 远程仓库
 
-  - 查看已经配置的远程仓库服务器  git remote 
+- 查看已经配置的远程仓库服务器  git remote 
 
-    如果你已经克隆了自己的仓库，那么至少应该能看到 origin 
+  如果你已经克隆了自己的仓库，那么至少应该能看到 origin 
 
-     -v, --verbose 
+   -v, --verbose 
 
-  - 查看某个远程仓库服务器 git remote show origin
+- 查看某个远程仓库服务器 git remote show origin
 
-    ![img](file://C:/Users/Administrator/Desktop/%E5%A4%8D%E4%B9%A0/%E7%B4%A0%E6%9D%90/pic/git/5.jpg?lastModify=1657032719)
+  ![img](file://C:/Users/Administrator/Desktop/%E5%A4%8D%E4%B9%A0/%E7%B4%A0%E6%9D%90/pic/git/5.jpg?lastModify=1657032719)
 
-  - 添加 git remote add <shortname> <url> 
+- 添加 git remote add <shortname> <url> 
 
-  - 拉取数据
+- 拉取数据
 
-    ```
-    git fetch <remote>
-    ```
+  ```
+  git fetch <remote>
+  ```
 
-    如果你使用 `clone` 命令克隆了一个仓库，命令会自动将其添加为远程仓库并默认以 “origin” 为简写。 所以，`git fetch origin` 会抓取克隆（或上一次抓取）后新推送的所有工作。 必须注意 `git fetch` 命令只会将数据下载到你的本地仓库——它并不会自动合并或修改你当前的工作。 当准备好时你必须手动将其合并入你的工作。 
+  如果你使用 `clone` 命令克隆了一个仓库，命令会自动将其添加为远程仓库并默认以 “origin” 为简写。 所以，`git fetch origin` 会抓取克隆（或上一次抓取）后新推送的所有工作。 必须注意 `git fetch` 命令只会将数据下载到你的本地仓库——它并不会自动合并或修改你当前的工作。 当准备好时你必须手动将其合并入你的工作。 
 
-    如果你的当前分支设置了跟踪远程分支 那么可以用 `git pull` 命令来自动抓取后合并该远程分支到当前分支  抓取数据并自动尝试合并到当前所在的分支 
+  如果你的当前分支设置了跟踪远程分支 那么可以用 `git pull` 命令来自动抓取后合并该远程分支到当前分支  抓取数据并自动尝试合并到当前所在的分支 
 
-  - 推送到远程仓库
+## 推送到远程仓库
 
-    git push <remote> <branch> 
+git push <remote> <branch> 
 
-    克隆时服务器自动设置成orign
+克隆时服务器自动设置成orign
 
-    git push <remote> <branch> 
+git push <remote> <branch> 
 
-    **push之前先pull**
+注意: 
 
-  - 远程仓库重命名 git remote rename old new
+1. 如果本地分支与远程分支不同名  
 
-  - 删除 git remote remove origin
+   可通过git branch -vv 查看所有分支版本
 
-    一旦你使用这种方式删除了一个远程仓库，那么所有和这个远程仓库相关的远程跟踪分支以及配置信息也会一起被删除 
+   git push origin HEAD:master
 
+   每次都要这样写,有点麻烦,修改配置  git config --global push.default upstream   之后只要git push就行
+
+2. **push之前先pull**
+
+   
+
+- 远程仓库重命名 git remote rename old new
+
+- 删除 git remote remove origin
+
+  一旦你使用这种方式删除了一个远程仓库，那么所有和这个远程仓库相关的远程跟踪分支以及配置信息也会一起被删除 
+  
 - 打标签
 
   - 列出标签 git tag
