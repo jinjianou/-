@@ -46,15 +46,15 @@ git（**快照流** ）：对当时的全部文件创建一个快照并保存这
 
 ​	
 
-#命令
+# 命令
 
-- 查看/配置账号 git config
+## 查看/配置账号 git config
 
-  git config --list --show-origin 查看所有配置和所在文件
+git config --list --show-origin 查看所有配置和所在文件
 
-  git config ${scope} user.name "xxx"
+git config ${scope} user.name "xxx"
 
-  git config ${scope} [user.email] xxx
+git config ${scope} [user.email] xxx
 
 - -global(不推荐使用)  该命令只需要运行一次,之后无论你在该系统上做任何事情， Git 都会使用那些信息    ~/.gitconfig
 
@@ -92,7 +92,7 @@ git（**快照流** ）：对当时的全部文件创建一个快照并保存这
   doc/**/*.pdf
   ```
 
-- 获取仓库
+  ## 获取仓库
 
   - git-init - Create an empty Git repository or reinitialize an existing one 
 
@@ -120,27 +120,37 @@ git（**快照流** ）：对当时的全部文件创建一个快照并保存这
 
        ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-    
 
-- 文件状态
+## 跟踪远程分支
 
-  你工作目录下的每一个文件都不外乎这两种状态：**已跟踪** 或 **未跟踪**。 已跟踪的文件是指那些被纳入了版本控制的文件 ，否则未跟踪
+```
+git branch --set-upstream-to=origin/branch branch
+或git branch -b origin/branch branch
 
-  - 查看文件状态
+git remote add  <name 如origin> <远程仓库地址> 增加远程仓库
+```
 
-    新建文件 git status
+一般我们就用git push --set-upstream origin branch_name来在远程创建一个与本地branch_name同名的分支并跟踪；利用git checkout --track origin/branch_name来在本地创建一个与branch_name同名分支跟踪远程分支。
 
-     -s, --short           show status concisely
+## 文件状态
 
-    ![img](file://C:/Users/Administrator/Desktop/%E5%A4%8D%E4%B9%A0/%E7%B4%A0%E6%9D%90/pic/git/2.jpg?lastModify=1657032719)
+你工作目录下的每一个文件都不外乎这两种状态：**已跟踪** 或 **未跟踪**。 已跟踪的文件是指那些被纳入了版本控制的文件 ，否则未跟踪
 
-  - git add a.txt > git status
+- 查看文件状态
 
-    ![img](file://C:/Users/Administrator/Desktop/%E5%A4%8D%E4%B9%A0/%E7%B4%A0%E6%9D%90/pic/git/3.jpg?lastModify=1657032719)
+  新建文件 git status
 
-  - 此时又对a.txt做修改![img](file://C:/Users/Administrator/Desktop/%E5%A4%8D%E4%B9%A0/%E7%B4%A0%E6%9D%90/pic/git/4.jpg?lastModify=1657032719)
+   -s, --short           show status concisely
 
-    此时commit的话 只会提交add之后 new file的版本
+  ![img](file://C:/Users/Administrator/Desktop/%E5%A4%8D%E4%B9%A0/%E7%B4%A0%E6%9D%90/pic/git/2.jpg?lastModify=1657032719)
+
+- git add a.txt > git status
+
+  ![img](file://C:/Users/Administrator/Desktop/%E5%A4%8D%E4%B9%A0/%E7%B4%A0%E6%9D%90/pic/git/3.jpg?lastModify=1657032719)
+
+- 此时又对a.txt做修改![img](file://C:/Users/Administrator/Desktop/%E5%A4%8D%E4%B9%A0/%E7%B4%A0%E6%9D%90/pic/git/4.jpg?lastModify=1657032719)
+
+  此时commit的话 只会提交add之后 new file的版本
 
 - 查看文件差异
 
