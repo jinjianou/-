@@ -838,13 +838,83 @@ client:
 
 ### 日志级别
 
-trace debug info warn error fatal off
+trace debug info warn error fatal off 
+
+sb默认info
 
 ```
  logging.level.<logger-name>=<level>
 ```
 
-[logger XML 属性 - Snail90 - 博客园 (cnblogs.com)](https://www.cnblogs.com/snail90/p/10335392.html)
+1. logger 有两种级别：
+
+　　　　一种是 root
+
+　　　　一种是普通的 logger
+
+​	logger 有三个属性：
+
+- name：用来指定此 logger 约束的**某一个包**或者具体的某一个类 
+- level：用来设置打印级别
+- addtivity：是否向上级 logger 传递打印信息，为true的时候会打印2次以上的日志。默认是 true。
+
+　　每个 logger 都有对应的父级关系，它通过包名来决定父级关系，root 是最高级的父元素。
+
+```
+ <logger name="org.springframework" level="INFO">
+ 或
+ <root level="all">
+            <appender-ref ref="Console"/>
+            <appender-ref ref="RollingFileDebug"/>
+            <appender-ref ref="RollingFileInfo"/>
+            <appender-ref ref="RollingFileWarn"/>
+            <appender-ref ref="RollingFileError"/>
+        </root>
+```
+
+2.  Appenders节点
+
+   常见的有三种子节点:Console、RollingFile、File. 
+
+```
+ <!--这个输出控制台的配置 target SYSTEM_OUT或SYSTEM_ERR-->
+        <console name="Console" target="SYSTEM_OUT">
+            <!--输出日志的格式 不设置默认 %m%n.-->
+            <PatternLayout pattern="[%d{HH:mm:ss:SSS}] [%p] - %l - %m%n"/>
+        </console>
+```
+
+```
+<!--文件会打印出所有信息，这个log每次运行程序会自动清空，由append属性决定（true追加），这个也挺有用的，适合临时测试用-->
+        <File name="log" fileName="log/test.log" append="false">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %class{36} %L %M - %msg%xEx%n"/>
+        </File>
+```
+
+```
+<!-- 这里的日志类似流一样的进入 RollingFileInfo ， 然后经过 ThresholdFilter 进行过滤。       
+                因为经过ThresholdFilter的时候，如果有匹配项，则直接打印日志了，所以需要把高等级的日志级别放在前面
+                并且，onMatch属性设置为DENY，过滤掉高等级的日志；onMismatch设置为NEUTRAL，把低等级的日志放行，
+                到我们想要的级别后，onMache设为ACCEPT，获取到日志，并onMismatch设置为DENY，丢弃低等级日志，并执行结束-->
+        <RollingFile name="RollingFileALL" fileName="${sys:user.home}/logs/count-dispather/default/info.log"
+                     filePattern="${sys:user.home}/logs/count-dispather/default/$${date:yyyy-MM}/info-%d{yyyy-MM-dd}-%i.log">
+            <Filters>
+                   <!--  控制台只输出level及以上级别的信息（onMatch），其他的直接拒绝（onMismatch） -->
+                <ThresholdFilter level="OFF" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+            <PatternLayout pattern="[%d{HH:mm:ss:SSS}] [%p] - %l - %m%n"/>
+            <！--  指定滚动日志的策略，就是什么时候进行新建日志文件输出日志-->
+            <Policies>
+            	<！--基于时间的滚动策略，interval属性用来指定多久滚动一次，默认是1 hour。modulate=true用来调整时间：比如现在是早上3am，interval是4，那么第一次滚动是在4am，接着是8am，12am...而不是7am.-->
+                <TimeBasedTriggeringPolicy/>
+        	<!--基于指定文件大小的滚动策略，size属性用来定义每个日志文件的大小.-->
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+            </Policies>
+             <!-- DefaultRolloverStrategy属性如不设置，则默认为最多同一文件夹下7个文件，这里设置了20 -->
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+```
 
 # Web开发
 
