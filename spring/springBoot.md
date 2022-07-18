@@ -341,7 +341,7 @@ doc参考 2.4.0的版本 https://docs.spring.io/spring-boot/docs/2.4.0/reference
 
       * ![12](C:\Users\Administrator\Desktop\复习\素材\pic\spring\12.jpg)
 
-        前者虽然不支持spel 但支持${xx.xx}引用
+        前者虽然不支持spel 但支持${xx.xx}引用,如: 
 
       * 配置随机值
 
@@ -354,16 +354,15 @@ doc参考 2.4.0的版本 https://docs.spring.io/spring-boot/docs/2.4.0/reference
           number-less-than-ten: "${random.int(10)}"
           number-in-range: "${random.int[1024,65536]}"
           
-          使用时不需要加“”
         ```
 
       * 配置验证
 
-        JSR-303  javax.validation   @Validated 
+        JSR-303  javax.validation.xxx   
 
         * **ensure that a compliant JSR-303 implementation is on your classpath** and then add constraint annotations to your fields 
 
-          **spring-boot-starter-validation** 
+          **spring-boot-starter-validation**  @Validated 
 
         
 
