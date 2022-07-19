@@ -1,4 +1,4 @@
-# Spring
+Java API forRESTful WebServicesSpring
 
 ![4](C:\Users\Administrator\Desktop\复习\素材\pic\spring\4.jpg)
 
@@ -179,8 +179,9 @@ spring-boot-starter-web
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-devtools</artifactId>
-    <optional>true</optional>
-    <scope>true</scope>
+    <!--依赖不传递->
+    <optional>true</optional> 
+    <scope>runtime</scope>
 </dependency>
 ```
 
@@ -846,290 +847,633 @@ trace debug info warn error fatal off
 
 [logger XML 属性 - Snail90 - 博客园 (cnblogs.com)](https://www.cnblogs.com/snail90/p/10335392.html)
 
+
+
+### 日志格式
+
+ <!--输出格式布局，每个转换说明符以百分号(%)开头，'%'后面的转换字符有如下:-->
+            <!--
+            p (level) 日志级别
+            c（logger） Logger的Name
+            C (class) Logger调用者的全限定类名 ***
+            d (date) 日期
+            highlight 高亮颜色
+            l (location) 调用位置 ***
+            L (line) 行号
+            m (msg/message) 输出的内容
+            M (methode) 调用方法 ***
+            maker marker的全限定名
+            n 输出平台相关的换行符,如'\n' '\r\n'
+            pid (processId) 进程ID
+            level （p）日志级别
+            r JVM启动后经过的微秒
+            t (tn/thread/threadName) 线程名称
+            T (tid/threadId) 线程ID
+            tp (threadPriority) 线程优先级
+            x (NDC) 线程Context堆栈
+            -->
+
+%logger 输出logger名称，因为Root Logger没有名称，所以没有输出
+
+默认
+
+```
+%d{yyyy-MM-dd HH:mm:ss.SSS} -%5p ${PID:-} [%15.15t] %-40.40logger{39} : %m%n
+```
+
+```
+2022-07-19 09:35:53.034  INFO 16180 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+```
+
+
+
+自定义格式
+
+```
+logging.pattern.[console|file]
+```
+
+
+
+文件路径
+
+```
+logging.file.[path|name]
+```
+
+
+
+### 注解
+
+先安装lombok
+
+```
+@Slf4j`和`@Log4j2` 建议在开发过程中默认选择：`@Slf4j
+@Target({ElementType.TYPE})
+
+相当于： private static Logger log = LoggerFactory.getLogger(WeixinPayService.class);
+```
+
+
+
+### 框架切换
+
+​	默认logback 
+
+   比如想切换成log4j2
+
+1. 添加log4j2,并且移除sb中logback的依赖
+
+   ```
+   <!-- 切换日志框架-->
+           <dependency>
+               <groupId>org.springframework.boot</groupId>
+               <artifactId>spring-boot-starter</artifactId>
+               <exclusions>
+                   <exclusion>
+                       <groupId>org.springframework.boot</groupId>
+                       <artifactId>spring-boot-starter-logging</artifactId>
+                   </exclusion>
+               </exclusions>
+           </dependency>
+           <dependency>
+               <groupId>org.springframework.boot</groupId>
+               <artifactId>spring-boot-starter-log4j2</artifactId>
+           </dependency>
+   ```
+
+   
+
+2. 在resources中创建log4j2-spring.xml
+
+   ```
+   <?xml version="1.0" encoding="UTF-8"?>
+   <!--设置log4j2的自身log级别为warn -->
+   <configuration status="warn">
+       <properties>
+           <!--这里配置的是日志存到文件中的路径-->
+           <!-- 父项目根目录下-->
+           <Property name="log_path">logs</Property>
+       </properties>
+       <appenders>
+           <console name="Console" target="SYSTEM_OUT">
+               <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss.SSS}][%t][%c(类):%L(行)] %m%n"/>
+           </console>
+           <!-- 这里配置了普通日志的格式和存入文件的路径 -->
+           <RollingFile name="RollingFileInfo" fileName="${log_path}/info.log"
+                        filePattern="${log_path}/$${date:yyyy-MM}/info-%d{yyyy-MM-dd}-%i.log">
+               <Filters>
+                   <ThresholdFilter level="INFO"/>
+                   <ThresholdFilter level="WARN" onMatch="DENY" onMismatch="NEUTRAL"/>
+               </Filters>
+               <PatternLayout pattern="[%d][%t][%c(类):%L(行)] %m%n"/>
+               <!--  <PatternLayout pattern="[%d][%t] -5level %m%n"/> -->
+               <Policies>
+                   <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                   <SizeBasedTriggeringPolicy size="5 MB"/>
+               </Policies>
+           </RollingFile>
+           <!-- 这里配置了警告日志的格式和存入文件的路径 -->
+           <RollingFile name="RollingFileWarn" fileName="${log_path}/warn.log"
+                        filePattern="${log_path}/$${date:yyyy-MM}/warn-%d{yyyy-MM-dd}-%i.log">
+               <Filters>
+                   <ThresholdFilter level="WARN"/>
+                   <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="NEUTRAL"/>
+               </Filters>
+               <PatternLayout pattern="[%d][%t][%c(类):%L(行)] %m%n"/>
+               <!-- <PatternLayout pattern="[%d][%t][%p][%c:%L] %m%n"/> -->
+               <Policies>
+                   <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                   <SizeBasedTriggeringPolicy size="5 MB"/>
+               </Policies>
+           </RollingFile>
+           <RollingFile name="RollingFileError" fileName="${log_path}/error.log"
+                        filePattern="${log_path}/$${date:yyyy-MM}/error-%d{yyyy-MM-dd}-%i.log">
+               <ThresholdFilter level="ERROR"/>
+               <PatternLayout pattern="[%d][%t][%c(类):%L(行)] %m%n"/>
+               <!--  <PatternLayout pattern="[%d][%t]  %-5level %m%n"/> -->
+               <Policies>
+                   <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                   <SizeBasedTriggeringPolicy size="5 MB"/>
+               </Policies>
+           </RollingFile>
+           <!-- 配置mongdb appender -->
+       </appenders>
+       <loggers>
+           <!-- 过滤redis重连日志 -->
+           <logger name="io.lettuce.core.protocol" level="ERROR">
+               <appender-ref ref="RollingFileError" />
+           </logger>
+           <!--过滤掉spring的一些无用的debug信息-->
+   <!--        <logger name="org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport" level="Error"></logger>-->
+   
+           <root level="INFO">
+               <appender-ref ref="Console"/><!-- 配置控制台输出日志 -->
+               <appender-ref ref="RollingFileInfo"/><!-- 配置普通日志 -->
+               <appender-ref ref="RollingFileWarn"/><!-- 配置警告日志 -->
+               <appender-ref ref="RollingFileError"/><!-- 配置异常日志 -->
+           </root>
+       </loggers>
+   </configuration>
+   
+   ```
+
+   
+
 # Web开发
 
-* springMVC快速使用
+## springMVC快速使用
+
+```java
+@RestController
+@RequestMapping("/user")
+```
+
+### 调用rest http 通过RestTemplate 堵塞式
+
+Synchronous client to **perform HTTP requests, exposing a simple, template method API** over underlying HTTP client libraries such as the JDK HttpURLConnection, Apache HttpComponents, and others
+
+The auto-configured `RestTemplateBuilder` ensures that sensible **`HttpMessageConverters` are applied to `RestTemplate` instances**  HttpMessageConverters会将请求对象->jsonStr，接受方需要加上@requestBody
+
+**尽量减少直接依赖同一项目下别的模块（减少耦合，同时防止配置文件的冲突）**
+
+allow parallel run
+
+```
+private final RestTemplate restTemplate;
+/*when a class without non-args constructor,springBoot will
+* autoWired the parameter for the constructor
+* add @Autowired specific constructor to instance
+ */
+public RestDemoController(RestTemplateBuilder restTemplateBuilder) {
+    this.restTemplate = restTemplateBuilder.build();
+}
+
+@GetMapping("/{id}")
+public Result rest(@PathVariable Integer id){
+    // 1st url  2nd response classType 3rd parameter
+   return this.restTemplate.getForObject(
+            "http://localhost:8088/user/{id}"
+                , Result.class,id);
+}
+```
+![19](C:\Users\Administrator\Desktop\复习\素材\pic\spring\19.jpg)
+
+**@RequestParam bean 或者 bean 都能拿到params和request body(前提是k-v，json对象不行)**
+
+​	 推荐  @RequestParam
+
+				1. application/x-www-form-urlencoded编码的内容
+   2.  multipart/form-data (表单上传的)
+
+​	 @RequestBody
+
+​		一般用来处理 Content-Type: 为application/json
+
+**Sping-boot-starter-json使用的jackson**
+
+   解决null也显示
+
+* 类上 @JsonInclude(JsonInclude.Include.NON_NULL)
+
+* 全局 application.* 
+
+  * JacksonAutoConfiguration.Jackson2ObjectMapperBuilderCustomizerConfiguration
+
+    spring.jackson.defaultPropertyInclusion=NON_NULL
+
+### webclient  
+
+都可以调用远程服务 依赖webflux(响应式无堵塞)
+
+### 工具：
+
+* postman
+
+* apipost
+
+  api接口管理
+
+* MockMvc
+
+  由spring-test提供，实现了对Http请求的模拟，能够直接使用网络的形式，转换到对controller的调用，是的测试**不依赖网络环境**（不需要项目启动web容器），测试速度快，同时提供了一套验证工具。
+
+  @SpringBootTest 
+
+  @AutoConfigureWebTestClient 
+
+  * class MockMvc :all
+  * class WebTestClient: focus on  web layer (WebFlux  )
 
   ```java
-  @RestController
-  @RequestMapping("/user")
+  @SpringBootTest
+  @AutoConfigureMockMvc //专注于mockMvc 依赖junit5
+  public class MockMvcTest {
+  
+      @Autowired
+      private MockMvc mockMvc;
+  
+      @Test
+      public void test() throws Exception {
+          //发起模拟请求，不需要启动web应用
+          mockMvc.perform(
+                  //get MockHttpServletRequestBuilder
+                  //'url' should start with a path or be a complete HTTP
+                  //注意所在的模块 及  restTemplate请求的服务器是否alive
+                  MockMvcRequestBuilders.get("/rest/{id}",1)
+                  //  设置响应文本类型
+                  .accept(MediaType.APPLICATION_JSON)
+  //                .param(key,value)   k-v对形式
+    .contentType(MediaType.APPLICATION_JSON)、、	//  设置请求文本类型
+              .content(obj）//请求的paramString
+  
+          ).andExpect(MockMvcResultMatchers.status().isOk()) //200
+          .andExpect(
+                  MockMvcResultMatchers.jsonPath("$.data.address") //$代表responseBody
+                  .value("zhe")
+          )
+          .andDo(MockMvcResultHandlers.print());
+      }
+  }
   ```
 
-  * 调用rest http 通过RestTemplate 堵塞式
+### swagger(开发环境使用)
 
-    Synchronous client to **perform HTTP requests, exposing a simple, template method API** over underlying HTTP client libraries such as the JDK HttpURLConnection, Apache HttpComponents, and others
+**自动生成接口文档的工具**
 
-    The auto-configured `RestTemplateBuilder` ensures that sensible **`HttpMessageConverters` are applied to `RestTemplate` instances**  HttpMessageConverters会将请求对象->jsonStr，接受方需要加上@requestBody
+* swagger-codegen 生成html和cwiki
+* swagger-ui 可视化页面+接口测试
+* swagger-editor 类似markdown编辑器，可实时预览
+* swagger-inspector postman
+* swagger-hub 集成上述所有功能
 
-    **尽量减少直接依赖同一项目下别的模块（减少耦合，同时防止配置文件的冲突）**
+步骤：
 
-    allow parallel run
+1. 导入依赖
 
-    ```
-    private final RestTemplate restTemplate;
-    /*when a class without non-args constructor,springBoot will
-    * autoWired the parameter for the constructor
-    * add @Autowired specific constructor to instance
-     */
-    public RestDemoController(RestTemplateBuilder restTemplateBuilder) {
-        this.restTemplate = restTemplateBuilder.build();
+   ```
+   	<dependency>
+   		<groupId>io.springfox</groupId>
+   		<artifactId>springfox-boot-starter</artifactId>
+   		<version>3.0.0</version>
+   	</dependency>
+   ```
+
+2. 在启动类上加上@EnableOpenApi
+
+3. 配置各种需要加文档注释的地方 可选
+
+   * 类 @Api tags
+
+     Marks a **class** as a Swagger resource.
+
+   * 方法 @ApiOperation
+
+     Describes an **operation or typically a HTTP method** against a specific path
+
+     If tags() is not used, this value will be used to set the tag for the operations described by this resource. Otherwise, the value will be ignored.
+
+     tags会新建一栏 类似 类@Api
+
+   * ApiImplicitParam Represents a single **parameter** in an API Operation.  
+
+     ApiImplicitParams A wrapper to allow a list of multiple ApiImplicitParam objects.
+
+     ```
+     @ApiImplicitParam(name = "A", value = "used by A", defaultValue = "A", dataTypeClass = String.class，required=true,paramType="body"),
+     paramType：path（@PathVariable）, query, body, header or form
+     swagger不允许get/head有body（推荐） postman可以 
+     ```
+
+     This is the only way to define parameters when using Servlets  or other non-JAX-RS environments.
+
+     JAX-RS: Java API forRESTful WebServices
+
+     Map @RequestParam将会使得queryString全部映射到Map without@RequestParam 无法映射
+
+   * ApiResponse Describes **a possible response of an operation**.
+     ApiResponses A wrapper to allow a list of multiple ApiResponse objects.
+
+     ```
+     @ApiResponse(code = 200,message = "test success",response = String.class),
+     ```
+
+   * @ApiModel **Provides additional information about Swagger models**（classes）。Classes will be introspected（省略） automatically as they are used as types in operations, but you may want to manipulate the structure of the models **用在实体类上 配合@ApiModelProperty使用 该类一般用作方法参数 schemas中有展示（加上@RequestParam无法展示字段）**
+
+     ```
+     @ApiModel(value="TestController2",parent=Object.class)
+     ```
+
+   * error： **Resolver error at paths./test.get.parameters.1.schema.$ref**
+     Your API definition is fine. This error is a bug/limitation of Swagger UI's $ref resolver - sometimes it fails on long $ref + allOf/oneOf/anyOf chains, recursive schemas, circular references, or a combination thereof.
+
+#### project_path/swagger-ui/ **notice tail /**
+
+API信息配置：
+
+```
+@Configuration
+public class SwaggerConfig {
+    @Bean
+    public Docket createRestApi(){
+        return new Docket(DocumentationType.OAS_30)
+                .apiInfo(creatApiInfo())
+                .groupName("开发者001") //分组 多个分组就多个Docket bean实例
+                //过滤
+                .select()
+//                .apis(RequestHandlerSelectors.basePackage("org.jinjianou.myspringbootstarter1.controllers"))
+                .paths(PathSelectors.ant("/user/**"))
+                .build()
+                .enable(true) //swagger开关
+                ;
     }
-    
-    @GetMapping("/{id}")
-    public Result rest(@PathVariable Integer id){
-        // 1st url  2nd response classType 3rd parameter
-       return this.restTemplate.getForObject(
-                "http://localhost:8088/user/{id}"
-                    , Result.class,id);
+
+    @Bean
+    public Docket createRestApi2(){
+        return new Docket(DocumentationType.OAS_30)
+                .apiInfo(creatApiInfo())
+                .groupName("开发者002") //分组 多个分组就多个Docket bean实例
+                //过滤
+                .select()
+//                .apis(RequestHandlerSelectors.basePackage("org.jinjianou.myspringbootstarter1.controllers"))
+                .paths(PathSelectors.ant("/test/**"))
+                .build()
+                .enable(true) //swagger开关
+                ;
     }
-    ```
-    ![19](C:\Users\Administrator\Desktop\复习\素材\pic\spring\19.jpg)
 
-    **@RequestParam bean 或者 bean 都能拿到params和body(前提是k-v，json不行)**
 
-    ​	 推荐 RequestParam @RequestParam json @RequestBody
-
-    **Sping-boot-starter-json使用的jackson**
-
-       解决null也显示
-
-    * 类上 @JsonInclude(JsonInclude.Include.NON_NULL)
-
-    * 全局 application.* 
-
-      * JacksonAutoConfiguration.Jackson2ObjectMapperBuilderCustomizerConfiguration
-
-        spring.jackson.defaultPropertyInclusion=NON_NULL
-
-  * webclient  都可以调用远程服务 依赖webflux(响应式无堵塞)
-
-  * 工具：
-
-    * postman
-
-    * apipost
-
-    * MockMvc
-
-      由spring-test提供，实现了对Http请求的模拟，能够直接使用网络的形式，转换到对controller的调用，是的测试**不依赖网络环境**（不需要项目启动web容器），测试速度快，同时提供了一套验证工具。
-
-      @SpringBootTest 
-
-      @AutoConfigureWebTestClient 
-
-      * class MockMvc :all
-      * class WebTestClient: focus on  web layer (WebFlux  )
-
-      ```java
-      @SpringBootTest
-      @AutoConfigureMockMvc //专注于mockMvc 依赖junit5
-      public class MockMvcTest {
-      
-          @Autowired
-          private MockMvc mockMvc;
-      
-          @Test
-          public void test() throws Exception {
-              //发起模拟请求，不需要启动web应用
-              mockMvc.perform(
-                      //get MockHttpServletRequestBuilder
-                      //'url' should start with a path or be a complete HTTP
-                      //注意所在的模块 及  restTemplate请求的服务器是否alive
-                      MockMvcRequestBuilders.get("/rest/{id}",1)
-                      //  设置响应文本类型
-                      .accept(MediaType.APPLICATION_JSON)
-      //                .param(key,value)   k-v对形式
-        .contentType(MediaType.APPLICATION_JSON)、、	//  设置请求文本类型
-                  .content(obj）//请求的paramString
-      
-              ).andExpect(MockMvcResultMatchers.status().isOk()) //200
-              .andExpect(
-                      MockMvcResultMatchers.jsonPath("$.data.address") //$代表responseBody
-                      .value("zhe")
-              )
-              .andDo(MockMvcResultHandlers.print());
-          }
-      }
-      ```
-
-  * swagger(开发环境使用)
-
-    **自动生成接口文档的工具**
-
-    * codegen 生成html和cwiki
-    * ui 可视化页面+接口测试
-    * editor 类似markdown编辑器，可实时预览
-    * inspector postman
-    * hub 集成上述所有功能
-
-    步骤：
-
-    1. 导入依赖
-
-       ```
-       	<dependency>
-       		<groupId>io.springfox</groupId>
-       		<artifactId>springfox-boot-starter</artifactId>
-       		<version>3.0.0</version>
-       	</dependency>
-       ```
-
-    2. 在启动类上加上@EnableOpenApi
-
-    3. 配置各种需要加文档注释的地方 可选
-
-       * 类 @Api tags
-
-         Marks a **class** as a Swagger resource.
-
-       * 方法 @ApiOperation
-
-         Describes an **operation or typically a HTTP method** against a specific path
-
-         If tags() is not used, this value will be used to set the tag for the operations described by this resource. Otherwise, the value will be ignored.
-
-         tags会新建一栏 类似 类@Api
-
-       * ApiImplicitParam Represents a single **parameter** in an API Operation.  
-
-         ApiImplicitParams A wrapper to allow a list of multiple ApiImplicitParam objects.
-
-         ```
-         @ApiImplicitParam(name = "A", value = "used by A", defaultValue = "A", dataTypeClass = String.class，required=true,paramType="body"),
-         paramType：path（@PathVariable）, query, body, header or form
-         swagger不允许get/head有body（推荐） postman可以 
-         ```
-
-         Map @RequestParam将会使得queryString全部映射到Map without@RequestParam 无法映射
-
-       * ApiResponse Describes **a possible response of an operation**.
-         ApiResponses A wrapper to allow a list of multiple ApiResponse objects.
-
-         ```
-         @ApiResponse(code = 200,message = "test success",response = String.class),
-         ```
-
-       * @ApiModel **Provides additional information about Swagger models**（classe）。Classes will be introspected（省略） automatically as they are used as types in operations, but you may want to manipulate the structure of the models **用在实体类上 配合@ApiModelProperty使用 一般用作方法参数 schemas中有展示（加上@RequestParam无法展示字段）**
-
-         ```
-         @ApiModel(value="TestController2",parent=Object.class)
-         ```
-
-       * error： **Resolver error at paths./test.get.parameters.1.schema.$ref**
-         Your API definition is fine. This error is a bug/limitation of Swagger UI's $ref resolver - sometimes it fails on long $ref + allOf/oneOf/anyOf chains, recursive schemas, circular references, or a combination thereof.
-
-       * 接收xml
-
-         <?xml version="1.0" encoding="utf-8"?>
-         <B>
-           <id>0</id>
-           <title>string</title>
-           <author>string</author>
-         </B>
-
-         ```
-         @Data
-         @JacksonXmlRootElement(localName = "B")
-         public class XMLRequestEntity {
-             @JacksonXmlProperty(localName ="id")
-             private Integer id;
-             @JacksonXmlProperty(localName ="title")
-             private String title;
-             @JacksonXmlProperty(localName ="author")
-             private String author;
-         }
-         ```
-
-       ```
-       @PostMapping(value = "/test",consumes = {"application/xml"})
-       public String test(@RequestBody XMLRequestEntity B, String A){
-       ```
-
-    4. project_path/swagger-ui/ **notice tail /**
-
-       API信息配置：
-
-    ```
-    @Configuration
-    public class SwaggerConfig {
-        @Bean
-        public Docket createRestApi(){
-            return new Docket(DocumentationType.OAS_30)
-                    .apiInfo(creatApiInfo())
-                    .groupName("开发者001") //分组 多个分组就多个Docket bean实例
-                    //过滤
-                    .select()
-    //                .apis(RequestHandlerSelectors.basePackage("org.jinjianou.myspringbootstarter1.controllers"))
-                    .paths(PathSelectors.ant("/user/**"))
-                    .build()
-                    .enable(true) //swagger开关
-                    ;
-        }
-    
-        @Bean
-        public Docket createRestApi2(){
-            return new Docket(DocumentationType.OAS_30)
-                    .apiInfo(creatApiInfo())
-                    .groupName("开发者002") //分组 多个分组就多个Docket bean实例
-                    //过滤
-                    .select()
-    //                .apis(RequestHandlerSelectors.basePackage("org.jinjianou.myspringbootstarter1.controllers"))
-                    .paths(PathSelectors.ant("/test/**"))
-                    .build()
-                    .enable(true) //swagger开关
-                    ;
-        }
-    
-    
-        private ApiInfo creatApiInfo(){
-            return new ApiInfo("MySwagger Info"
-                    ,"MySwagger Info api documentation"
-                    ,"3.0"
-                    ,"http://www.baidu.com"
-                    ,new Contact("金建欧","http://www.baidu.com","jinjianou@163.com")
-                    ,"Apache 2.0"
-                    ,"https://www.baidu.com"
-                    ,new ArrayList()
-            );
-        }
+    private ApiInfo creatApiInfo(){
+        return new ApiInfo("MySwagger Info"
+                ,"MySwagger Info api documentation"
+                ,"3.0"
+                ,"http://www.baidu.com"
+                ,new Contact("金建欧","http://www.baidu.com","jinjianou@163.com")
+                ,"Apache 2.0"
+                ,"https://www.baidu.com"
+                ,new ArrayList()
+        );
     }
-    @Configuration
-    public class SwaggerConfig {
-        @Bean
-        public Docket createRestApi(){
-            return new Docket(DocumentationType.OAS_30)
-                    .apiInfo(creatApiInfo());
-        }
-    
-        private ApiInfo creatApiInfo(){
-            return new ApiInfo("MySwagger Info"
-                    ,"MySwagger Info api documentation"
-                    ,"3.0"
-                    ,"http://www.baidu.com"
-                    ,new Contact("金建欧","http://www.baidu.com","jinjianou@163.com")
-                    ,"Apache 2.0"
-                    ,"https://www.baidu.com"
-                    ,new ArrayList()
-            );
-        }
+}
+@Configuration
+public class SwaggerConfig {
+    @Bean
+    public Docket createRestApi(){
+        return new Docket(DocumentationType.OAS_30)
+                .apiInfo(creatApiInfo());
     }
-    ```
 
-* springMVC自动配置原理分析
+    private ApiInfo creatApiInfo(){
+        return new ApiInfo("MySwagger Info"
+                ,"MySwagger Info api documentation"
+                ,"3.0"
+                ,"http://www.baidu.com"
+                ,new Contact("金建欧","http://www.baidu.com","jinjianou@163.com")
+                ,"Apache 2.0"
+                ,"https://www.baidu.com"
+                ,new ArrayList()
+        );
+    }
+}
+```
 
-  ​	springBoot为spring mvc提供了自动配置，在spring默认值之上添加了以下功能：
+## 接收xml
 
-  * ContentNegotiatingViewResolverBeanNameViewResolver
-    * @AutoConfigureAfter（classes[]） 表示**本类bean晚于**classes实例化 order只针对spring.factories文件下的自动配置类生效 
-  * 支持提供静态资源，包括对WebJars的支持
-  * 自动注册Converter,GenericConverter,Fottatter
-  * 支持HttpMessageConveter
-  * 自动注册MessageCodesResolver
-  * 静态index.html支持
-  * 自动使用ConfigurableWebBindingInitializer
+<?xml version="1.0" encoding="utf-8"?>
+<B>
+  <id>0</id>
 
+  <title>string</title>
+
+  <author>string</author>
+</B>
+
+```
+@Data
+@JacksonXmlRootElement(localName = "B")
+public class XMLRequestEntity {
+    @JacksonXmlProperty(localName ="id")
+    private Integer id;
+    @JacksonXmlProperty(localName ="title")
+    private String title;
+    @JacksonXmlProperty(localName ="author")
+    private String author;
+}
+```
+
+```
+@PostMapping(value = "/test",consumes = {"application/xml"})
+public String test(@RequestBody XMLRequestEntity B, String A){
+```
+
+4. project_path/swagger-ui/ **notice tail /**
+
+   API信息配置：
+
+```
+@Configuration
+public class SwaggerConfig {
+    @Bean
+    public Docket createRestApi(){
+        return new Docket(DocumentationType.OAS_30)
+                .apiInfo(creatApiInfo())
+                .groupName("开发者001") //分组 多个分组就多个Docket bean实例
+                //过滤
+                .select()
+//                .apis(RequestHandlerSelectors.basePackage("org.jinjianou.myspringbootstarter1.controllers"))
+                .paths(PathSelectors.ant("/user/**"))
+                .build()
+                .enable(true) //swagger开关
+                ;
+    }
+
+    @Bean
+    public Docket createRestApi2(){
+        return new Docket(DocumentationType.OAS_30)
+                .apiInfo(creatApiInfo())
+                .groupName("开发者002") //分组 多个分组就多个Docket bean实例
+                //过滤
+                .select()
+//                .apis(RequestHandlerSelectors.basePackage("org.jinjianou.myspringbootstarter1.controllers"))
+                .paths(PathSelectors.ant("/test/**"))
+                .build()
+                .enable(true) //swagger开关
+                ;
+    }
+
+
+    private ApiInfo creatApiInfo(){
+        return new ApiInfo("MySwagger Info"
+                ,"MySwagger Info api documentation"
+                ,"3.0"
+                ,"http://www.baidu.com"
+                ,new Contact("金建欧","http://www.baidu.com","jinjianou@163.com")
+                ,"Apache 2.0"
+                ,"https://www.baidu.com"
+                ,new ArrayList()
+        );
+    }
+}
+@Configuration
+public class SwaggerConfig {
+    @Bean
+    public Docket createRestApi(){
+        return new Docket(DocumentationType.OAS_30)
+                .apiInfo(creatApiInfo());
+    }
+
+    private ApiInfo creatApiInfo(){
+        return new ApiInfo("MySwagger Info"
+                ,"MySwagger Info api documentation"
+                ,"3.0"
+                ,"http://www.baidu.com"
+                ,new Contact("金建欧","http://www.baidu.com","jinjianou@163.com")
+                ,"Apache 2.0"
+                ,"https://www.baidu.com"
+                ,new ArrayList()
+        );
+    }
+}
+```
+
+
+
+# springMVC自动配置原理分析
+
+​	springBoot为spring mvc提供了自动配置，在spring默认值之上添加了以下功能：
+
+1. ContentNegotiatingViewResolver  BeanNameViewResolver
+
+   The ContentNegotiatingViewResolver does not resolve views itself, but delegates to other ViewResolvers. 
+
+   
+   
+   BeanNameViewResolver 根据返回的视图名称找到对应的viewBean
+   
+   ```
+       @RequestMapping("/demo4")
+       public String demo4() {
+           return "testBeanView"; //必须是小写 且必须是@Controller
+       }
+   ```
+   
+   ```
+   @Component
+   public class TestBeanView implements View {
+       @Override
+       public String getContentType() {
+           return "text/html";
+       }
+   
+       @Override
+       public void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response) throws Exception {
+           response.getWriter().write("welcome to beanView page");
+       }
+   }
+   ```
+   
+   同样地, ExcelViewResolver   extends AbstractXlsxView
+   
+   不过在之前要配置对应的ViewResolver
+   
+   
+   
+   ​	@AutoConfigureAfter（classes[]） 表示**本类bean晚于**classes实例化 order只针对spring.factories文件下的自动配置类生效 
+   
+   **默认restcontroller成功请求不走viewResolver**
+
+2. 支持提供静态资源，包括对WebJars的支持
+
+   ​	之前的静态资源需要放行配置,sb不同配置,只需要将资源放在约定的static目录
+
+   ```
+   registration.addResourceLocations(this.resourceProperties.getStaticLocations());
+   CLASSPATH_RESOURCE_LOCATIONS = { "classpath:/META-INF/resources/",
+   				"classpath:/resources/", "classpath:/static/", "classpath:/public/" };
+   ```
+
+   首页 index.html
+
+   
+
+   自定义资源目录
+
+   ```
+   @ConfigurationProperties(prefix = "spring.resources", ignoreUnknownFields = false)
+   public class ResourceProperties extends Resources {
+   ```
+
+   
+
+   WebJars: client-side web libraries (e.g. jQuery & Bootstrap) packaged into JAR (Java Archive) files.
+
+   ```
+   addResourceHandler(registry, "/webjars/**", "classpath:/META-INF/resources/webjars/");
+   ```
+
+   urlpattern是/webjars/xx 会去classpath:/META-INF/resources/webjars/找对应的资源
+
+3. 自动注册Converter,GenericConverter,Formatter
+
+   ```java
+   		@Bean
+   		@Override
+   		public FormattingConversionService mvcConversionService() {
+   			Format format = this.mvcProperties.getFormat();
+   			WebConversionService conversionService = new WebConversionService(new DateTimeFormatters()
+   					.dateFormat(format.getDate()).timeFormat(format.getTime()).dateTimeFormat(format.getDateTime()));
+   			addFormatters(conversionService);
+   			return conversionService;
+   		}
+   ```
+
+   
+
+* 支持HttpMessageConveter
+* 自动注册MessageCodesResolver
+* 静态index.html支持
+* 自动使用ConfigurableWebBindingInitializer
 * 定制springMVC的自动配置
-
 * springBoot嵌入式servlet容器
 
 
