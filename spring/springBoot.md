@@ -1,4 +1,4 @@
-Java API forRESTful WebServicesSpring
+*(Java API forRESTful WebServicesSpring
 
 ![4](C:\Users\Administrator\Desktop\复习\素材\pic\spring\4.jpg)
 
@@ -1537,16 +1537,221 @@ public class SwaggerConfig {
    		}
    ```
 
+   ```.format
+   spring.mvc.format.xxx
+   ```
    
-
-* 支持HttpMessageConveter
-* 自动注册MessageCodesResolver
-* 静态index.html支持
-* 自动使用ConfigurableWebBindingInitializer
-* 定制springMVC的自动配置
-* springBoot嵌入式servlet容器
+   或者 自定义一个formatter
+   
+   ```
+   public static void addBeans(FormatterRegistry registry, ListableBeanFactory beanFactory)
+   ```
 
 
+
+4. 支持HttpMessageConveter
+
+   HttpMessageConveter
+
+   Strategy interface for converting from and to HTTP requests and responses.
+
+5. 自动注册MessageCodesResolver
+
+   MessageCodesResolver: 
+
+   Strategy interface for building message codes from validation error codes. Used by DataBinder to build the codes list for ObjectErrors and FieldErrors.
+
+6. 静态index.html支持
+
+```
+		public InternalResourceViewResolver defaultViewResolver() {
+			InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+			resolver.setPrefix(this.mvcProperties.getView().getPrefix());
+			resolver.setSuffix(this.mvcProperties.getView().getSuffix());
+			return resolver;
+		}
+```
+
+spring.mvc.view.prefix=/     //默认在/static/等目录下
+
+spring.mvc.view.suffix=.html
+
+7. 自动使用ConfigurableWebBindingInitializer
+   ConfigurableWebBindingInitializer
+
+   Convenient WebBindingInitializer for declarative configuration in a Spring application context. Allows for reusing pre-configured initializers with multiple controller/handlers.
+
+   初始化WebDataBinder( data binding from web request parameters to JavaBean objects)，将请求的参数转化为对应的JavaBean，并且会结合类型、格式转换等API一起使用
+
+##　自定义覆盖
+
+* conditionOnBean 自定义需要的bean覆盖原有webmvcAutoConfiguration
+
+* addViewController 
+
+  ​	Configure simple automated controllers pre-configured with the response status code and/or a view to render the response body. 
+
+```
+@Configuration
+public class MyMvcAutoConfiguration implements WebMvcConfigurer {
+    @Override
+    public void  addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("/myView").setViewName("index");
+    }
+
+}
+```
+
+* configurePathMatch(PathMatchConfigurer configurer) 
+
+   PathMatchConfigurer  给路径匹配增加属性,比如尾部/
+
+  但不会影响addViewControllers配置的path
+
+  ```
+      @Override
+      public void configurePathMatch(PathMatchConfigurer configurer) {
+          configurer.setUseTrailingSlashMatch(true);
+      }
+  ```
+
+*  拦截器
+
+  ```
+      @Override
+      public void addInterceptors(InterceptorRegistry registry) {
+          registry.addInterceptor()
+                  .addPathPatterns("/**")
+                  .excludePathPatterns("/pages/*.html");
+  
+      }
+  ```
+
+  
+
+* 跨域
+
+  跨域，是指浏览器不能执行其他网站的脚本。它是由**浏览器的同源策略**造成的，是浏览器对JavaScript实施的安全限制。
+
+  狭义的同源就是指域名、协议、端口均为相同。
+
+  局部 @CrossOrigin
+
+  全局设置 CORS
+
+  ```
+      @Override
+      public void addCorsMappings(CorsRegistry registry) {
+                 registry.addMapping("/user/**")
+                  .allowedOrigins("http://localhost:81")
+                  .allowedMethods("GET","POST","PUT","DELETE");
+      }
+  ```
+
+### 自定义原理
+
+​	WebmvcAutoConfigutation ->WebMvcAutoConfigurationAdapter->EnableWebMvcConfiguration->DelegatingWebMvcConfiguration
+
+``` java
+private final WebMvcConfigurerComposite configurers = new WebMvcConfigurerComposite();
+
+
+	@Autowired(required = false)
+	public void setConfigurers(List<WebMvcConfigurer> configurers) {
+		if (!CollectionUtils.isEmpty(configurers)) {
+			this.configurers.addWebMvcConfigurers(configurers);
+		}
+	}
+```
+
+​	WebMvcConfigurerComposite 同样实现了WebMvcConfigurer接口,相应的操作实际上是循环webMvcConfigurers,如
+
+```
+	@Override
+	public void addViewControllers(ViewControllerRegistry registry) {
+		for (WebMvcConfigurer delegate : this.delegates) {
+			delegate.addViewControllers(registry);
+		}
+	}
+```
+
+
+
+@EnableWebMvc
+
+Adding this annotation to an @Configuration class imports the Spring MVC configuration from WebMvcConfigurationSupport,
+
+由于WebMvcAutoConfiguration @ConditionalOnMissingBean(WebMvcConfigurationSupport.class)
+
+而 @EnableWebMvc @Import(DelegatingWebMvcConfiguration.class)
+
+class DelegatingWebMvcConfiguration extends WebMvcConfigurationSupport
+
+因此注解了@EnableWebMvc会使得WebMvcAutoConfiguration配置全部失效
+
+
+
+# JSON
+
+Spring Boot provides integration with three JSON mapping libraries:
+
+- Gson
+- Jackson
+- JSON-B
+
+Jackson is the preferred and default library.
+
+
+
+1. @JsonIgnore
+
+   ```
+   the logical property is to be ignored
+   ```
+
+2. @JsonFormat
+
+   默认时间戳(或者这种"2022-07-20T08:28:00.997+00:00")  如pattern="yyyy-MM-dd"
+
+3. @JsonInclude(JsonInclude.Include.xxx)
+
+4. @JsonProperty
+
+   ```
+   can be used to define a non-static
+    * method as a "setter" or "getter" for a logical property
+    * (depending on its signature),
+    * or non-static object field to be used (serialized, deserialized) as
+    * a logical property.
+   ```
+
+   javaBean的字段取个新名字展示在json串
+
+
+
+自定义json序列化与反序列化
+
+@JsonComponet
+
+```
+@JsonComponent
+public class UserJsonConversion {
+    public static class Serializer extends JsonObjectSerializer<User> {
+
+        @Override
+        protected void serializeObject(User value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
+            jgen.writeObjectField("username",value.getUsername());
+        }
+    }
+    public static class Deserializer extends JsonObjectDeserializer<User> {
+
+        @Override
+        protected User deserializeObject(JsonParser jsonParser, DeserializationContext context, ObjectCodec codec, JsonNode tree) throws IOException {
+            return null;
+        }
+    }
+}
+```
 
 
 

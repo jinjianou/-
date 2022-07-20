@@ -1,4 +1,4 @@
-# .gitignore
+.gitignore
 .DS_Store
 node_modules
 dist
@@ -24,3 +24,4 @@ public/video
 /src/styles/themes/dark.scss
 /src/styles/themes/glory.scss
 /.history
+.vscode
