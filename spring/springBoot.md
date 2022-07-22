@@ -1753,13 +1753,452 @@ public class UserJsonConversion {
 }
 ```
 
+# 国际化
+
+1. 添加国际化资源文件
+
+   在resources下新建i18n目录
+
+   新建message.properties/message_en_US.properties/message_zh_CN.properties
+
+2. 配置MessageResource
+
+   ```
+   @Configuration(proxyBeanMethods = false)
+   @ConditionalOnMissingBean(name = AbstractApplicationContext.MESSAGE_SOURCE_BEAN_NAME, search = SearchStrategy.CURRENT)
+   @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
+   @Conditional(ResourceBundleCondition.class) //spring.messages.basename=i18n.message(不能写成/i18n/message)
+   @EnableConfigurationProperties  //Enable support for @ConfigurationProperties annotated beans
+   public class MessageSourceAutoConfiguration
+   ```
+
+3. 解析请求头的accept-language 或者 解析url参数中?local=
+
+   sb默认Accept-Header
+
+   spring.web.locale可以设置默认locale
+
+   ```
+   @Bean
+   @ConditionalOnMissingBean(name = DispatcherServlet.LOCALE_RESOLVER_BEAN_NAME)
+   public LocaleResolver localeResolver() {
+   			if (this.webProperties.getLocaleResolver() == WebProperties.LocaleResolver.FIXED) {
+   				return new FixedLocaleResolver(this.webProperties.getLocale());
+   			}
+   			if (this.mvcProperties.getLocaleResolver() == WebMvcProperties.LocaleResolver.FIXED) {
+   				return new FixedLocaleResolver(this.mvcProperties.getLocale());
+   			}
+   			AcceptHeaderLocaleResolver localeResolver = new AcceptHeaderLocaleResolver();
+   			Locale locale = (this.webProperties.getLocale() != null) ? this.webProperties.getLocale()
+   					: this.mvcProperties.getLocale();
+   			localeResolver.setDefaultLocale(locale);
+   			return localeResolver;
+   		}
+   ```
+
+   只有"Accept-Language"是null 时,defaultLocale生效
+
+   ```
+   		if (defaultLocale != null && request.getHeader("Accept-Language") == null) {
+   			return defaultLocale;
+   		}
+   ```
+
+   
+
+4. ~~将本地语言进行缓存~~
+
+5. 通过 MessageResource获取国际化信息
+
+   ```
+   @Autowired
+   private MessageSource messageSource;
+   ...
+   
+   messageSource.getMessage("user.query.success",null, LocaleContextHolder.getLocale())
+   ```
+
+   若中文乱码 先看下fileEncoding
+
+6. 自定义localeResolve
+
+   ```
+   @Bean
+   public LocaleResolver localeResolver(){
+       CookieLocaleResolver localeResolver = new CookieLocaleResolver();
+       localeResolver.setCookieName("localCookie");
+       localeResolver.setCookieMaxAge(60*60);
+       return localeResolver;
+   }
+   
+   @Override
+   public void addInterceptors(InterceptorRegistry registry) {
+       //request.getParameter 通过?locale=
+       registry.addInterceptor(new LocaleChangeInterceptor()).addPathPatterns("/**");
+   }
+   ```
+
+# 异常处理
+
+内置BasicErrorController统一处理error
+
+```
+	@RequestMapping(produces = MediaType.TEXT_HTML_VALUE)
+	public ModelAndView errorHtml(HttpServletRequest request, HttpServletResponse response)
+	
+	
+		@RequestMapping
+	public ResponseEntity<Map<String, Object>> error(HttpServletRequest request)
+```
+
+只有当Accept是 text/html(\*/*也不行)时走errorHtml,其它走error
+
+分析errorHtml方法:
+
+<li>{@code '/<templates>/error/404.<ext>'}</li>
+
+<li>{@code '/<static>/error/404.html'}</li>
+
+<li>{@code '/<templates>/error/4xx.<ext>'}</li>
+
+<li>{@code '/<static>/error/4xx.html'}</li>
+
+1. getErrorAttributes获得错误属性
+
+2. DefaultErrorViewResolver.resolveErrorView
+
+3. templateAvailabilityProviders.getProvider 找到可用的视图模板 如FreeMarker or Thymeleaf
+
+4. 若没有模板视图 this.resources.getStaticLocations()(sb的静态资源目录) if exists errorCode.thml
+
+   如resources/static下有error/500.html就会走自定义的错误页面
+
+5. 若还是没有 继续找同系列的view 重复3,4
+
+   如400.html没有 去找4xx.html
 
 
 
+自定义errorController extends AbstractErrorController 
+
+```
+@Bean
+@ConditionalOnMissingBean(value = ErrorController.class, search = SearchStrategy.CURRENT)
+public BasicErrorController basicErrorController(ErrorAttributes errorAttributes,ObjectProvider<ErrorViewResolver> errorViewResolvers)
+```
+
+
+
+@ControllerAdvice+@ExceptionHandler
+
+
+
+
+
+# 嵌入Servlet容器
+
+spring-boot-starter-web 导入spring-boot-starter-tomcat 默认tomcat
+
+```
+	@Bean
+	@ConditionalOnClass(name = "org.apache.catalina.startup.Tomcat")
+	public TomcatServletWebServerFactoryCustomizer tomcatServletWebServerFactoryCustomizer(
+			ServerProperties serverProperties) {
+		return new TomcatServletWebServerFactoryCustomizer(serverProperties);
+	}
+```
+
+修改配置的两种方式
+
+1. server.tomcat.xxx..
+2. 写一个组件实现WebServerFactoryCustomizer接口
+
+##  注册servlet三大组件
+
+1. servlet3.0
+
+   ```
+   @WebServlet(urlPatterns = {"/HelloServlet"})
+   public class HelloServlet extends HttpServlet 
+   
+   @SpringBootApplication
+   @ServletComponentScan
+   public class WebApplication 
+   ```
+
+   
+
+2. sb
+
+   ```
+   public class ServletBean extends HttpServlet 
+   
+       @Bean
+       public ServletRegistrationBean<ServletBean> registrationBean(){
+           return new ServletRegistrationBean<ServletBean>(new ServletBean(),"/ServletBean");
+       }
+   
+   ```
+
+
+
+## 切换其他嵌入式servlet容器
+
+1. spring-boot-starter-web exclude spring-boot-starter-tomcat
+2. 导入其他容器  spring-boot-starter-xxx
+
+
+
+```
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+    <exclusions>
+        <exclusion>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-jetty</artifactId>
+</dependency>
+```
+
+
+
+### 内置Servlet自动配置原理
+
+ServletWebServerFactoryAutoConfiguration
+
+```
+@Import({ ServletWebServerFactoryAutoConfiguration.BeanPostProcessorsRegistrar.class,
+      ServletWebServerFactoryConfiguration.EmbeddedTomcat.class,
+      ServletWebServerFactoryConfiguration.EmbeddedJetty.class,
+      ServletWebServerFactoryConfiguration.EmbeddedUndertow.class })
+```
+
+
+
+自定义属性配置
+
+WebServerFactoryCustomizer implements ServletWebServerFactoryCustomizer
+
+怎么调用WebServerFactoryCustomizer :
+
+BeanPostProcessorsRegistrar#registerBeanDefinitions
+
+```
+registerSyntheticBeanIfMissing(registry, "webServerFactoryCustomizerBeanPostProcessor",
+      WebServerFactoryCustomizerBeanPostProcessor.class,
+      WebServerFactoryCustomizerBeanPostProcessor::new);
+```
+
+WebServerFactoryCustomizerBeanPostProcessor
+
+```
+private void postProcessBeforeInitialization(WebServerFactory webServerFactory) {
+   LambdaSafe.callbacks(WebServerFactoryCustomizer.class, getCustomizers(), webServerFactory)
+         .withLogger(WebServerFactoryCustomizerBeanPostProcessor.class)
+         .invoke((customizer) -> customizer.customize(webServerFactory));
+}
+```
+
+BeanPostProcessor
+
+​	postProcessBeforeInitialization 在Bean初始化时init方法之前
+
+​	postProcessAfterInitialization 在Bean初始化时init方法之后
+
+
+
+servlet容器怎么启动
+
+WebServerFactory#getWebServer 负责对应容器的创建和启动
+
+在spring应用容器启动,就会调用容器onFresh方法
+
+
+
+### 使用外部servlet
+
+​	打成war包部署到外部servlet容器
+
+​	缺陷:能解析web.xml webservlet等注解,但不误解析springboot配置(并没有启动spring容器)
+
+​	原因: spring-boot-maven-plugin会生成Menifest.xml 指定主类
+
+​	解决: 创建一个继承SpringBootServletInitializer的类,并重写confifure方法,指定sources 主类
+
+
+
+###  原理
+
+ 	根据SPI 从WEB-INF/lib下jar包的   META_INF中找到ServletContainerInitializer的实现类 即SpringServletContainerInitializer,在容器启动时实例化并调用startup方法
+
+HandlesTypes(WebApplicationInitializer.class)
+
+​	容器会自动在classpath下找到WebApplicationInitializer类的实例并注入到startup的参数中
+
+```
+for (WebApplicationInitializer initializer : initializers) {
+   initializer.onStartup(servletContext);
+}
+```
+
+![image-20220722134152672](..\spring\springBoot.assets\image-20220722134152672.png)
+
+1. SpringBootServletInitializer.createRootApplicationContext相当于
+
+​		SpringApplication.run(WebApplication.class);
+
+2. AbstractContextLoaderInitializer相当于web.xml ContextLoaderListener配置
+3. AbstractDispatcherServletInitializer相当于web.xml DispatcherServlet配置
+
+
+
+# 模板引擎
+
+以freeMarker为例
+
+1. 导入依赖
+
+   ```
+   <dependency>
+       <groupId>org.springframework.boot</groupId>
+       <artifactId>spring-boot-starter-freemarker</artifactId>
+   </dependency>
+   ```
+
+2. 配置属性
+
+   ```
+   spring.freemarker.suffix=.html
+   spring.freemarker.template-loader-path=classpath:/templates/          //,分隔
+   ```
+
+3. @controller+html
 
 # 集成Mybatis
 
-## 依赖
+## 整合druid数据源
+
+1. 导入依赖
+
+   ```
+           <dependency>
+               <groupId>org.springframework.boot</groupId>
+               <artifactId>spring-boot-starter-web</artifactId>
+           </dependency>
+            
+           <dependency>
+               <groupId>com.alibaba</groupId>
+               <artifactId>druid-spring-boot-starter</artifactId>
+               <version>1.2.1</version>
+           </dependency>
+           
+                 <dependency>
+               <groupId>mysql</groupId>
+               <artifactId>mysql-connector-java</artifactId>
+               <version>8.0.18</version>
+           </dependency>
+   
+   ```
+
+   
+
+2. 配置属性
+
+   ```
+   spring:
+     datasource:
+       type: com.alibaba.druid.pool.DruidDataSource
+       username: root
+       password: root
+       driver-class-name: com.mysql.cj.jdbc.Driver
+       url: jdbc:mysql://localhost:3306/pagehelper?characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true
+       # Schema (DDL) script resource references
+   #    schema: classpath:person.sql
+       # Data (DML) script resource references.
+       data: classpath:person.sql
+       # Mode to apply when determining if DataSource initialization should be performed using the available DDL and DML scripts.
+       # 每次启动springboot都会执行
+       initialization-mode: always
+   ```
+
+3. 创建bean(DruidDataSourceAutoConfigure有了就不需要了)
+
+   ```
+   @Configuration
+   @ConditionalOnBean(DataSource.class)
+   public class DruidDataSourceConfig {
+   /*    //方式一: 通过ConfigurationProperties导入全部spring.datasource属性
+       @Bean
+       @ConfigurationProperties(prefix = "spring.datasource")
+       public DruidDataSource dataSource(){
+           return new DruidDataSource();
+       }*/
+   
+       //方式二: 直接注入 DataSourceProperties  通过DataSourceBuilder
+       @Bean
+       public DataSource dataSource(DataSourceProperties props){
+           return props.initializeDataSourceBuilder().build();
+       }
+   }
+   ```
+
+druid monitor 
+
+```
+ //注册后台界面Servlet bean , 用于显示后台界面
+    @Bean
+    public ServletRegistrationBean statViewServlet() {
+        //创建StatViewServlet，绑定到/druid/路径下
+        //开启后，访问localhost/druid就可以看到druid管理后台
+        ServletRegistrationBean bean = new ServletRegistrationBean(new StatViewServlet(), "/druid/*");
+        Map<String, String> param = new HashMap<String, String>();
+        param.put("loginUsername", "admin");
+        param.put("loginPassword", "123456");
+        param.put("allow", "");//哪些IP允许访问后台“”代表所有地址
+//        param.put("deny", "33.31.51.88");//不允许这个IP访问
+        bean.setInitParameters(param);
+        return bean;
+    }
+
+    //用于监听获取应用的数据 ， Filter用于收集数据, Servlet用于展现数据
+    //Filter 对 传给Servlet 容器的 Web 资源request 对象和 response 对象进行检查和修改
+    @Bean
+    public FilterRegistrationBean webStatFilter() {
+        FilterRegistrationBean bean = new FilterRegistrationBean();
+        bean.setFilter(new WebStatFilter()); //设置过滤器
+        bean.addUrlPatterns("/*");
+        Map<String, String> param = new HashMap<String, String>();
+        //排除静态资源
+        param.put("exclusions", "*.png,*.woff,*.js,*.css,/druid/*");
+        bean.setInitParameters(param);
+        bean.addInitParameter("profileEnable", "true");
+        return bean;
+    }
+
+//endregion
+```
+
+```sql
+# 配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+
+
+
+spring.datasource.filters=stat,wall,log4j
+```
+
+ 
+
+4.启动项目后, 输入URL ip:port/项目
+
+## 整合mybatis
+
+1. 依赖
 
 ```
 <dependency>
@@ -1778,9 +2217,7 @@ public class UserJsonConversion {
 </dependency>
 ```
 
-
-
-## 配置
+2. 配置
 
 ```
 spring:
@@ -1803,9 +2240,7 @@ logging:
           dao: debug
 ```
 
-
-
-## 接口和mapper文件
+3. 接口和mapper文件
 
 1. 接口上增加@Mapper注解
 

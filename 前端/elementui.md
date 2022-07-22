@@ -57,8 +57,14 @@
    ```
    找到vue.config.js,如果没有你可以自己新建一个，新增配置
    lintOnSave: false,
+    devServer: {
+        overlay: {
+               warnings: false,
+               errors: false
+           },
+       },
    ```
-
+   
    
 
 # 组件
@@ -1327,7 +1333,7 @@ slot
    @current-change   param:当前页
 
    @size-change param:  每页条数
-	    
+
 ### 与后台整合
 
 
