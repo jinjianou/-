@@ -53,7 +53,7 @@ export const asyncRoutes = [
       },
     ],
   },
-  /* {
+   {
     path: "/test",
     component: Layout,
     redirect: "noRedirect",
@@ -69,7 +69,7 @@ export const asyncRoutes = [
         },
       },
     ],
-  }, */
+  }, 
 
   {
     path: '/vab',

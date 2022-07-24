@@ -1136,9 +1136,9 @@ public Result rest(@PathVariable Integer id){
 				1. application/x-www-form-urlencoded编码的内容
    2.  multipart/form-data (表单上传的)
 
-​	 @RequestBody
+		 @RequestBody
 
-​		一般用来处理 Content-Type: 为application/json
+			一般用来处理 Content-Type: 为application/json
 
 **Sping-boot-starter-json使用的jackson**
 
@@ -1672,8 +1672,15 @@ private final WebMvcConfigurerComposite configurers = new WebMvcConfigurerCompos
 		for (WebMvcConfigurer delegate : this.delegates) {
 			delegate.addViewControllers(registry);
 		}
-	}
+	}·
 ```
+
+
+
+**注意：**
+
+1. **@Import是要晚于bean创建和@EnableConfigurationProperties的，所以configurers包含WebMvcAutoConfigurationAdapter**
+2. **@Import的class如果不在Application的扫描路径下，会去classpath下扫描**
 
 
 
@@ -1688,6 +1695,8 @@ Adding this annotation to an @Configuration class imports the Spring MVC configu
 class DelegatingWebMvcConfiguration extends WebMvcConfigurationSupport
 
 因此注解了@EnableWebMvc会使得WebMvcAutoConfiguration配置全部失效
+
+
 
 
 
@@ -2051,7 +2060,7 @@ for (WebApplicationInitializer initializer : initializers) {
 
 1. SpringBootServletInitializer.createRootApplicationContext相当于
 
-​		SpringApplication.run(WebApplication.class);
+			SpringApplication.run(WebApplication.class);
 
 2. AbstractContextLoaderInitializer相当于web.xml ContextLoaderListener配置
 3. AbstractDispatcherServletInitializer相当于web.xml DispatcherServlet配置
@@ -2196,6 +2205,123 @@ spring.datasource.filters=stat,wall,log4j
 
 4.启动项目后, 输入URL ip:port/项目
 
+
+
+**注意：sb的设计优先加载自定义配置Configuration，然后再考虑AutoConfiguration**
+
+
+
+## 代码生成器
+
+1. 添加插件
+
+   ```
+   <build>
+           <plugins>
+               <plugin>
+                   <groupId>org.mybatis.generator</groupId>
+                   <artifactId>mybatis-generator-maven-plugin</artifactId>
+                   <version>1.4.1</version>
+                   <configuration>
+                       <configurationFile>${basedir}/src/main/resources/generatorConfig.xml</configurationFile>
+                       <verbose>true</verbose>
+                       <overwrite>true</overwrite>
+                   </configuration>
+                   <dependencies>
+                       <dependency>
+                           <groupId>mysql</groupId>
+                           <artifactId>mysql-connector-java</artifactId>
+                           <version>8.0.28</version>
+                       </dependency>
+                   </dependencies>
+               </plugin>
+           </plugins>
+       </build>
+   ```
+
+   ​     注意：1.  默认xml文件生成时都是每次累加的
+
+      2. overwrite is only used for java files ,xml files is always be merged if suppressAllComment=true
+
+         解决：
+
+         ```
+         <dependency>
+             <groupId>org.mybatis.generator</groupId>
+             <artifactId>mybatis-generator-core</artifactId>
+             <version>1.4.1</version>  must >1.3.8
+         </dependency>
+         ```
+
+         在generator.xml 添加 <plugin type="org.mybatis.generator.plugins.UnmergeableXmlMappersPlugin"/>
+
+2. 配置文件generatorConfig.xml
+
+   ```
+   <?xml version="1.0" encoding="UTF-8"?>
+   <!DOCTYPE generatorConfiguration PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+           "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+   <generatorConfiguration>
+       <!--引入外部配置 not support yaml-->
+   <!--    <properties>application.yml</properties>-->
+   
+       <context id="default" defaultModelType="flat" targetRuntime="MyBatis3">
+           <property name="beginningDelimiter" value="`"/>
+           <property name="endingDelimiter" value="`"/>
+           <property name="javaFileEncoding" value="UTF-8"/>
+   
+           <!--阻止注释的生成-->
+           <commentGenerator>
+               <property name="suppressAllComments" value="true"/>
+               <property name="suppressDate" value="true"/>
+               <property name="addRemarkComments" value="true"/>
+           </commentGenerator>
+   
+           <!--数据库连接配置-->
+   <!--        <jdbcConnection dirverClass="${spring.datasource.driverClassName}"
+                           connectionURL="${spring.datasource.url}"
+                           userId="${spring.datasource.username}"
+                           password="${spring.datasource.password}">
+           </jdbcConnection>-->
+           <jdbcConnection driverClass="com.mysql.cj.jdbc.Driver"
+                           connectionURL="jdbc:mysql://localhost:3306/houdunren?characterEncoding=utf8&amp;useSSL=false&amp;serverTimezone=UTC&amp;rewriteBatchedStatements=true"
+                           userId="root"
+                           password="root"/>
+   
+           <!--实体类自动生成配置-->
+           <javaModelGenerator targetPackage="org.jinjianou.myspringbootstarter1.domain" targetProject="src/main/java">
+               <property name="constructorBased" value="false"/>
+               <property name="enableSubPackages" value="true"/>
+               <!--if true field is final-->
+               <property name="immutable" value="false"/>
+               <property name="trimStrings" value="true"/>
+           </javaModelGenerator>
+   
+           <!--mapper自动生成配置-->
+           <sqlMapGenerator targetPackage="org.jinjianou.myspringbootstarter1.mapper" targetProject="src/main/resources">
+   <!--            是否允许子包-->
+               <property name="enableSubPackages" value="true"/>
+           </sqlMapGenerator>
+   
+           <!--dao层接口自动生成配置-->
+   <!--        采用xml的方式-->
+           <javaClientGenerator type="XMLMAPPER" targetPackage="org.jinjianou.myspringbootstarter1.dao" targetProject="src/main/java">
+               <property name="enableSubPackages" value="true"/>
+           </javaClientGenerator>
+   
+           <!--指定数据表-->
+   <!--        针对所有数据表自动生成代码 则可将值设为%-->
+           <table tableName="test">
+   <!--            sqlStatement：指定主键的查询语句，如果值为MySql，则使用SELECT LAST_INSERT_ID() 语句来查询主键-->
+   <!--            identity：当值为true时，selectKey标签的order属性为AFTER-->
+               <generatedKey column="id" sqlStatement="MySql" identity="true"/>
+           </table>
+       </context>
+   </generatorConfiguration>
+   ```
+
+3. 执行goal  mybatis-generator:generate
+
 ## 整合mybatis
 
 1. 依赖
@@ -2240,17 +2366,43 @@ logging:
           dao: debug
 ```
 
+属性：
+
+  ConfigLocation --->mybatis-config.xml
+
+ConfigurationProperties --> mybatis-config.xml中的Properties顺序
+
+interceptors  --> 实现Interceptor的component 自动注入到mybatisAutoConfiguration 
+TypeAliasesPackage -- > 包下类别名
+TypeAliasesSuperType --> 父类的所有子类设置别名
+TypeHandlersPackage --> 类型处理器
+MapperLocations --> mapper.xml location
+
+更多配置 mybatis.configuration或者ConfigurationCustomizer(需要ConfigLocation即mybatis全局配置文件为空)
+
 3. 接口和mapper文件
 
-1. 接口上增加@Mapper注解
+接口上增加@Mapper注解**(或者在springApplicaiton上添加@MapperScan 配置需要扫描的包**)
 
-2. 建立配置中的mapper-locations目录，并添加xml(**namespace必须与接口一致**，文件名可以不同)
+建立配置中的mapper-locations目录，并添加xml(**namespace必须与接口一致**，文件名可以不同)
 
-3. service/controller
+4. service/controller
 
-   
+  
 
-## 问题
+
+
+
+
+# SpringBoot启动原理
+
+# SpringBoot 自定义starter 
+
+
+
+
+
+# 问题
 
 1.  Unknown character set index for field '255' received from server.
 

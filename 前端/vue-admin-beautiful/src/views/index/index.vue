@@ -620,7 +620,6 @@
     padding: 0 !important;
     margin: 0 !important;
     background: #f5f7f8 !important;
-
     ::v-deep {
       .el-alert {
         padding: $base-padding;
