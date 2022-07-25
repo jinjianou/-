@@ -1371,7 +1371,183 @@ slot
 ```
 
 .sync 解决相应数据改变但table并不会随之变化的问题 如pageSize,currentPage等
+
+
+
+## tree 
+
+```js
+<el-tree :data="data" :props="defaultProps" @node-click="handleNodeClick"></el-tree>
+```
+
+​	data数据格式
+
+```
+ data: [{
+          label: '一级 1',
+          children: [{
+            label: '二级 1-1',
+            children: [{
+              label: '三级 1-1-1'
+            }]
+          }]
+        }, {
+          label: '一级 2',
+          children: [{
+            label: '二级 2-1',
+            children: [{
+              label: '三级 2-1-1'
+            }]
+          }, {
+            label: '二级 2-2',
+            children: [{
+              label: '三级 2-2-1'
+            }]
+          }]
+        }, {
+          label: '一级 3',
+          children: [{
+            label: '二级 3-1',
+            children: [{
+              label: '三级 3-1-1'
+            }]
+          }, {
+            label: '二级 3-2',
+            children: [{
+              label: '三级 3-2-1'
+            }]
+          }]
+        }],
+```
+
+props 属性
+
+| 参数     | 说明                                                     | 类型                          | 可选值 | 默认值 |
+| :------- | :------------------------------------------------------- | :---------------------------- | :----- | :----- |
+| label    | 指定节点标签为节点对象的某个属性值                       | string, function(data, node)  | —      | —      |
+| children | 指定子树为节点对象的某个属性值                           | string                        | —      | —      |
+| disabled | 指定节点选择框是否禁用为节点对象的某个属性值             | boolean, function(data, node) | —      | —      |
+| isLeaf   | 指定节点是否为叶子节点，仅在指定了 lazy 属性的情况下生效 | boolean, function(data, node) | —      | —      |
+
+
+
+1.  结点可被选择
+
+   ```
+   <el-tree
+     :props="props"
+     :load="loadNode"
+     lazy
+     show-checkbox
+     @check-change="handleCheckChange">
+   </el-tree>
+   ```
+
+   
+
+   show-checkbox 
+
+   lazy  是否懒加载子节点，需与 load 方法结合使用
+
+   load  加载子树数据的方法，仅当 lazy 属性为true 时生效  function(node, resolve)
+
+   ```
+   data从后台取
+   每点击一个结点,获取其子节点
+   loadNode (node, resolve) {
+   	//初始化根节点
+         if (node.level === 0) {
+           return resolve([{ name: "region1" }, { name: "region2" }]);
+         }
+         if (node.level > 3) return resolve([]);
+   
+         var hasChild;
+         if (node.data.name === "region1") {
+           hasChild = true;
+         } else if (node.data.name === "region2") {
+           hasChild = false;
+         } else {
+           hasChild = Math.random() > 0.5;
+         }
+   
+         setTimeout(() => {
+           var data;
+           if (hasChild) {
+             data = [
+               {
+                 name: "zone" + this.count++,
+               },
+               {
+                 name: "zone" + this.count++,
+               },
+             ];
+           } else {
+             data = [];
+           }
+   
+           resolve(data);
+         }, 500);
+       },
+   ```
+
+   @check-change
+
+2. 提前告知是叶子节点,无需渲染获取子结点
+
+   ```
+   setTimeout(() => {
+             const data = [{
+               name: 'leaf',
+               leaf: true
+             }, {
+               name: 'zone'
+             }];
+   
+             resolve(data);
+           }, 500);
+   ```
+
+   
+
+3. 默认(不适用lazy)
+
+   node-key 每个节点在树中的唯一标识(可直接用tree data的label)
+
+   default-expanded-keys 默认展开结点的key
+
+   default-checked-keys 默认选中的节点
+
+4. disabled: true,
+
+5. 自定义结点内容
+
+   可以通过两种方法进行树节点内容的自定义：`render-content`和 scoped slot(推荐)。
+
+   ```
     
+    <el-tree ...>
+    <span class="custom-tree-node" slot-scope="{ node, data }">
+           <span>{{ node.label }}</span>
+           <span>
+             <el-button
+               type="text"
+               size="mini"
+               @click="() => append(data)">
+               Append
+             </el-button>
+             <el-button
+               type="text"
+               size="mini"
+               @click="() => remove(node, data)">
+               Delete
+             </el-button>
+           </span>
+         </span>
+         
+          </el-tree>
+   ```
+
+   
 
 # 案例
 

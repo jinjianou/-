@@ -1148,13 +1148,97 @@ module.exports = {
 
 ​		instance.get...
 
+
+
+1. 携带token
+
+   instance.defaults.headers.common['Authoriation']=getToken();
+
+2. 封装get方式请求
+
+   ```
+   export function get(url, params) {
+     return instance({
+       method: 'get',
+       url,
+       params, //get请求时带的参数自动转成k=v
+       timeout: 10000,
+       headers: {
+         'X-Requested-With': 'XMLHttpRequest',
+       },
+     })
+   }
+   ```
+
+   
+
+3. 封装post方式请求
+
+   {
+
+   ​	id:1
+
+   }
+
+   ```
+   
+   export function post(url, data) {
+     return instance({
+       method: 'post',
+       url,
+       data:qs.stringify(data), //k=v qs一个数据格式转化库
+       timeout: 10000,
+       headers: {
+         'X-Requested-With': 'XMLHttpRequest',
+         'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'
+       },
+     })
+   }
+   ```
+
+   {
+
+   ​	id:1,
+
+   ​	arr:[]
+
+   }
+
+   ```
+   export function post(url, data) {
+     return instance({
+       method: 'post',
+       url,
+       data:qs.stringify(data,{allowDots:true}), //k=v qs一个数据格式转化库
+       timeout: 10000,
+       headers: {
+         'X-Requested-With': 'XMLHttpRequest',
+         'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'
+       },
+     })
+   }
+   ```
+
+   arrayFormat:
+
+   ​		 indices(默认)   a[0]=b&a[1]=c
+
+   ​		brackets   a[]=b&a[]=c
+
+   ​		repeat或者 indices: false   a=b&a=c
+   allowDots:true
+
+   ​	arr\[0][fld]   ->  arr\[0].fld
+
+发送json字符串
+
+​	不需要做任何处理
+
 ## 拦截器
 
 ```
   instance.interceptors.request.use((config) => {  console.log(config)  return config})instance.interceptors.response.use((response) => {  return response.data})
 ```
-
-
 
 ## 全局配置
 
@@ -1796,20 +1880,20 @@ this.$router.go(0) 刷新当前页
 
 
 1. 安装vuex依赖
-  npm install vuex@3 -g
-  npm install vuex@3 --save
+    npm install vuex@3 -g
+    npm install vuex@3 --save
 
   最新4的版本适合vue@3的版本 用3
 
 store.js:
 2. 导入vuex包
-  import Vue from 'vue'
-  import Vuex from 'vuex'
-  Vue.use(Vuex)
+    import Vue from 'vue'
+    import Vuex from 'vuex'
+    Vue.use(Vuex)
 3. 创建store对象
-  export default new Vuex.Store({
-  state:{}
-  })
+    export default new Vuex.Store({
+    state:{}
+    })
 
 main.js
 4.挂载store对象到vue实例中
@@ -1938,6 +2022,62 @@ methods:{
 	...mapGetters(['showNum']),
 }
 ```
+
+## namespaced
+
+Vuex由于使用单一状态树，应用的所有状态会集中到一个比较大的对象。当应用变得非常复杂时，store 对象就有可能变得相当臃肿。
+
+   因此，Vuex 允许我们将 store 分割成**模块（module），**每个模块拥有自己的 state、mutation、action、getter、甚至是嵌套子模块。
+
+ 默认情况下，模块内部的 action、mutation 和 getter 是注册在**全局命名空间**的
+
+1.   创建模块 
+
+   export default{
+
+   ​	  **\*namespaced：true\*,**
+
+   ​	state:{},
+
+   ​	mutations:{},
+
+   actions:{},
+
+   getters:{}
+
+   }
+
+2. 获取模块概念
+
+   state:
+
+   this.$store.state.modulex.xxxx
+
+   ...mapState({
+
+   ​	count: state=>state.modulex.xxxx
+
+   })
+
+   
+
+   getter:
+
+   this.$store.getters['moduleA/moduleAGetter']
+
+   ...mapGetters('moduleA',['moduleAGetter']),此处的moduleA，不是以前缀的形式出现！！
+
+   
+
+   mutation:
+
+   this.$store.commit('moduleA/moduleAGetter')
+
+
+
+​	actions:
+
+​	this.$store.dispatch('moduleA/moduleAGetter')
 
 ## 案例
 
@@ -2390,22 +2530,22 @@ export default new Vuex.Store({
 
 
 ​		
-			next(vm=>{...}) //这里的vm就是当前组件的实例 相当于this
-	
+​			next(vm=>{...}) //这里的vm就是当前组件的实例 相当于this
+​	
 	    },
 	
 	    beforeRouteUpdate (to, from, next) {
 
 
 ​	     
-	    },
-	
+​	    },
+​	
 	    beforeRouteLeave (to, from, next) {
 
 
 ​	
-	    }
-	
+​	    }
+​	
 	</script>
 
 

@@ -53,7 +53,26 @@ export const asyncRoutes = [
       },
     ],
   },
-   {
+
+  {
+    path: '/waiter',
+    component: Layout,
+    redirect: 'noRedirect',
+    children: [
+      {
+        path: 'index',
+        name: 'waiter',
+        component: () => import('@/views/waiter/index'),
+        meta: {
+          title: '用户管理',
+          icon: 'marker',
+          permissions: ['admin', 'editor'],
+        },
+      },
+    ],
+  },
+
+  /* {
     path: "/test",
     component: Layout,
     redirect: "noRedirect",
@@ -69,7 +88,7 @@ export const asyncRoutes = [
         },
       },
     ],
-  }, 
+  }, */
 
   {
     path: '/vab',

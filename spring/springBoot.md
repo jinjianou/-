@@ -1134,12 +1134,14 @@ public Result rest(@PathVariable Integer id){
 ​	 推荐  @RequestParam
 
 				1. application/x-www-form-urlencoded编码的内容
-   2.  multipart/form-data (表单上传的)
+				2. multipart/form-data (表单上传的)
 
-		 @RequestBody
 
-			一般用来处理 Content-Type: 为application/json
+```
+ @RequestBody
 
+	一般用来处理 Content-Type: 为application/json
+```
 **Sping-boot-starter-json使用的jackson**
 
    解决null也显示
