@@ -476,18 +476,50 @@ router.afterEach(() => {
 
 
 
-export function getTreeList(data) {
+# 自定义模块
 
-  return request({
+1. @/views下新建模块目录以及index.vue(可包含子模块)
+2. 在@/route/index.js中配置相应菜单
+3. 修改@/views/module/index.vue
+4. 添加后台接口
 
-​    url: '/tree/list',
 
-​    method: 'post',
 
-​    data,
+注意: 
 
-  })
+1. request是个一步方法,直接使用会先执行后续程序,为保证结果,将其所在方法设为async 配合await
 
-}
+```
 
- 
+      async showEdit(row) {
+        this.singleSelectTreeData = await getTreeList()
+        this.treeVisible = true
+      },
+```
+
+2. vue中的this.$xx属性
+
+   - **this.$el**   获取Vue实例关联的真实DOM元素
+
+   - **this.$refs** 获取页面中所有含有ref属性的DOM元素
+
+   - **this.$options**  获取Vue实例的自定义属性
+
+     如this.$options.methods,获取Vue实例的自定义属性methods
+
+     this.$options.data() 相当于 this.$data
+
+   - **this.$data** 获取Vue实例的data对象
+
+   - this.$parent(父组件)   this.$children(3.x已被移除)
+
+     this.$root(根组件)
+
+   - this.$listeners 添加在这个组件的监听器
+
+   - this.$slots this.$scopedSlots
+
+   - this.$vnode(虚拟结点)
+
+     
+

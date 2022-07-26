@@ -63,8 +63,83 @@ enginx(engine x) 高性能Http和**反向代理web服务器**
 
 ## 安装
 
-* 在线linux环境
+* 在线linux 环境
 
-  * [Online Bash Compiler - Online Bash Editor - Online Bash IDE - Bash Coding Online - Practice Bash Online - Execute Bash Online - Compile Bash Online - Run Bash Online (tutorialspoint.com)](https://www.tutorialspoint.com/unix_terminal_online.php)
+  * shell:  [ Online Bash Compiler - Online Bash Editor - Online Bash IDE - Bash Coding Online - Practice Bash Online - Execute Bash Online - Compile Bash Online - Run Bash Online (tutorialspoint.com)](https://www.tutorialspoint.com/unix_terminal_online.php)
+* [JS/UIX - Terminal (masswerk.at)](https://www.masswerk.at/jsuix/index.html) 用户名 guest
 
-  * [JS/UIX - Terminal (masswerk.at)](https://www.masswerk.at/jsuix/index.html) 用户名 guest
+* 安装nginx
+
+  wget
+
+  yum
+
+  1. 装gcc-c++
+
+     yum install gcc-c++ 
+
+     yum install -y openssl openssl-devel
+
+  2. 安装pcre
+
+     yum install -y pcre pcre-devel
+
+  3. 安装zlib
+
+     yum install -y zlib zlib-devel
+
+  4. mkdir /usr/local/nginx
+
+  5. wget https://nginx.org/download/nginx-1.22.0.tar.gz
+
+  6. tar -zxvf nginx-1.19.9.tar.gz
+
+     cd nginx-1.19.9
+
+  7. 默认配置
+
+     ./configure
+
+  8. 编译安装
+
+     make 
+
+     make install
+
+  9. 查找安装路径
+
+     whereid nginx
+
+  10. 进入其中sbin目录
+
+      ./nginx
+
+  11. ps -ef | grep nginx
+  12. linux ip(port默认80)
+
+
+
+# 命令
+
+查看版本号
+
+​	./nginx -v
+
+停止
+
+​	./nginx -s stop
+
+启动
+
+​	./nginx 
+
+重新加载 conf/nginx.conf
+
+​	./nginx -s  reload
+
+
+
+# 配置文件
+
+/usr/local/nginx/conf/nginx.conf
+

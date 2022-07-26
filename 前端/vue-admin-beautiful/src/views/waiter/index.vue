@@ -120,7 +120,6 @@
     <table-edit ref="edit"></table-edit>
   </div>
 </template>
-
 <script>
   import { getList, doDelete } from '@/api/table'
   import TableEdit from './components/TableEdit'
@@ -220,9 +219,9 @@
       async fetchData() {
         this.listLoading = true
         const { data, totalCount } = await getList(this.queryForm)
-        this.list = data
+        this.list = data.list
         const imageList = []
-        data.forEach((item, index) => {
+        data.list.forEach((item, index) => {
           imageList.push(item.img)
         })
         this.imageList = imageList

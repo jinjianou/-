@@ -581,7 +581,7 @@ Redis内存数据库,断电即失,所以需要持久化
 
 ### AOF(append only file)
 
-![8](C:\Users\Administrator\Desktop\复习\素材\pic\redis\8.jpg)
+<img src="C:\Users\Administrator\Desktop\复习\素材\pic\redis\8.jpg" alt="8" style="zoom:200%;" />
 
 **将所有写命令记录下来 history ,恢复的时候就把这个文件再执行一遍**
 
