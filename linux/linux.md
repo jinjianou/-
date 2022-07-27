@@ -48,7 +48,21 @@ lan的消息也找默认网关，由它决定是向内广播还是向外发送�
 
 
 
+192.168.0.1/24  24指的子网掩码左侧24个1 即255.255.255.0
+
 **Domain Name Server** *(DNS) is a standard protocol that helps Internet users **discover websites using human readable addresses*** 
+
+### 交换机和路由器
+
+1. 外观 不同
+
+2. 交换机连接lan,但无法访问internet
+
+   现在路由器基本集成了交换机,既可以连接lan,也可以连接外网
+
+3.  路由器会在局域网自动分配IP，实现虚拟拨号
+
+   而交换机只是用来分配网络数据的。
 
 ### 网络连接方式
 
@@ -869,7 +883,7 @@ grep print lines matching a pattern
 ​	改变数据输出的位置，方向
 
 ​	0 in ; 1 out; 2 err 如 ls abcd 2>lucky
-	结合使用  ls abcd >lucky 2>&1   1&2同时都放进lucky
+​	结合使用  ls abcd >lucky 2>&1   1&2同时都放进lucky
 
 ​	信息黑洞 ll /etc >> /dev/null 2>&1
 
@@ -1330,7 +1344,7 @@ grep print lines matching a pattern
 
   ​        echo "$1 > $2"
      else
-          echo "$1 < $2"  
+  ​        echo "$1 < $2"  
   fi
 
   
@@ -1408,7 +1422,7 @@ grep print lines matching a pattern
   ....
 
   	*) 
-
+	
   	执行代码块;;
 
   esac
@@ -1645,7 +1659,7 @@ awk [options][BEGIN] [[condition]{program}][END]{file}
     head -2 /proc/meminfo
 
     ​	MemTotal:        4048192 kB
-    	MemFree:         3240152 kB
+    ​	MemFree:         3240152 kB
 
     head -2 /proc/meminfo|awk 'NR==1{total=2}; NR==2{free=2};print (total-free)*100/total "%"}'
 

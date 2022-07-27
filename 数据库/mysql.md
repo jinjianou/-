@@ -215,7 +215,7 @@ mysql8 修改密码:
   ​        检索：
 
   ​	select * from user where find_in_set('b',collection) 
-  	select * from user where collection like '%b%' 
+  ​	select * from user where collection like '%b%' 
 
 
 
@@ -524,8 +524,8 @@ ON UPDATE 指在更新时的处理方式，常用的处理方式包括以下几�
 悲观锁  指对数据被外界修改持保守态度，**在整个数据处理过程中，将数据处于锁定状态**
 
 ​	BEGIN;
-	SELECT * FROM user WHERE id=2 FOR UPDATE;
-	UPDATE user SET name2='x' WHERE id=2; 
+​	SELECT * FROM user WHERE id=2 FOR UPDATE;
+​	UPDATE user SET name2='x' WHERE id=2; 
 
 mysql中都是悲观锁
 
@@ -578,6 +578,21 @@ mysql中都是悲观锁
 
 **总结** **数值数据类型**要比字符串执行更快，**范围区间小的数据类型**占用空间更少，处理速度更快，如tinyint可比bigint要快的多。 选择数据类型时要考虑内容长度，比如是保存毫米单位还是米而选择不同的数值类型
 
+decimal(P,D) P是有效数字精度,D是小数位数
+
+ MySQL使用二进制格式存储`DECIMAL`值。它将`9`位数字包装成`4`个字节
+
+| 0    | 0    |
+| ---- | ---- |
+| 1–2  | 1    |
+| 3–4  | 2    |
+| 5–6  | 3    |
+| 7-9  | 4    |
+
+如decimal(19,9) 小数位9位 4个字节;整数部分10位,4+1(查表),所以总共要9个字节存储
+
+
+
 **索引弊端**
 
 - 创建索引会使查询操作变得更加快速，但是会降低增加、删除、更新操作的速度，因为执行这些操作的同时会对索引文件进行重新排序或更新
@@ -587,10 +602,213 @@ mysql中都是悲观锁
 ### 索引类型
 
 * UNIQUE唯一索引  不可以出现相同的值，可以有NULL值 
-
 * INDEX普通索引  允许出现相同的索引内容 
-
 * PRIMARY KEY主键索引  不允许出现相同的值，且不能为NULL值 
+
+
+
+### 数据结构分析
+
+[图灵诸葛老师MySQL视频教程全集，MySQL数据库优化+MySQL索引优化（2022最新版）_哔哩哔哩_bilibili](https://www.bilibili.com/video/BV1D44y1Y79z?p=1&vd_source=694ae2fa63787dd0c86c0c90c56dd2e0)
+
+![image-20220727161348917](.\mysql.assets\image-20220727161348917.png)
+
+1. 无数据结构  需要经过n次io
+2. 二叉树（binary tree）是指树中节点的**度不大于2**的**有序**树 
+
+二叉查找树（binary search tree）
+
+若它的左子树不空，则左子树上所有结点的值均小于它的 根结点 的值； 若它的右子树不空，则右子树上所有结点的值均大于它的根结点的值；
+
+```
+自增键的话 退化成链表 o(n)
+```
+
+
+
+2. 红黑树 **红黑树其实就是去除二叉查找树顶端优势的解决方案**，从而达到树的平衡 
+
+Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找树(BST) 
+
+ 1. 每个节点都有红色或黑色 
+
+ 2. 树的根始终是黑色的 每个叶节点都是不存储数据的黑色空节点
+
+ 3. 没有两个相邻的[红色节点](https://www.zhihu.com/search?q=%E7%BA%A2%E8%89%B2%E8%8A%82%E7%82%B9&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A79980618%7D)（红色节点不能有红色父节点或红色子节点，**并没有说不能出现连续的黑色节点**） 
+
+ 4. 任意节点到其可到达的叶节点间都具有相同数量的黑色节点 
+
+    
+
+    变色&旋转
+
+    旋转
+
+    * 左旋
+
+      x左旋 让x的右节点y成为x的父节点（调整后x是y的左子树），让**y**的左子树成为x的右子树 
+
+    * 右旋
+
+    - x右旋 让x的左孩子y成为新的父节点（调整后x是y的右子树），让y的右子树成为x的左子树
+
+步骤:
+
+1. 插入 与二叉查找树相同 插入节点且颜色红色
+2. 修复
+
+* z是根节点（插入前是空树） 红色->黑色
+
+* z的叔节点是红色的
+
+  ​	将 parent 和 uncle 标记为黑色 
+
+  ​	将 grand parent (祖父) 标记为红色 
+
+* z的叔节点是黑色的，且局部呈现直线
+
+  ​	z zparent  zgrand parent在一条直线上
+
+  ​	1. 右边的直线左旋 左边的直线右旋 对 zgrand parent旋转
+
+   2. z原来的parent 和grand parent变色
+
+      3.根节点变黑色
+
+* z的叔节点是黑色的，且局部呈现三角形
+
+   zparent  zgrand z叔结点构成了一个三角形
+
+  1. z的父节点右旋
+  2. 参照情况三旋转
+
+​	**当索引列数据量很大时，由于红黑树高度不可控（会变得很大,如id），mysql没使用红黑树**
+
+* AVL
+
+  平衡[二叉树](https://so.csdn.net/so/search?from=pc_blog_highlight&q=%E4%BA%8C%E5%8F%89%E6%A0%91)的定义是一种递归定义，要求每个节点都具有以下特性：
+
+  1. 可以是一棵空树
+  2. 左子树和右子树高度之差的绝对值不超过1（左右子树的高度差可以为0、1和 -1）
+  3. 左子树和右子树均为平衡二叉树
+
+* B tree
+
+  平衡的**多路**（多叉）搜索树，多用于文件系统，数据库实现
+
+  高度平衡 每个节点的所有子树高度一致
+
+  m阶b树 节点存储的元素个数最多时m-1个   根节点最少1个 非根节点最少ceil(m/2)-1个
+
+  * 添加
+
+    新添加元素必定是添加到叶子节点
+
+    可能出现上溢的问题（上节点的元素个数必然等于m）
+
+    1. 设上溢节点最中间的位置为k
+    2. 将k位置的元素向上与父节点合并
+    3. 将[0,k-1]和[k+1,m-1]元素分别分裂成节点
+    4. 递归处理父节点上溢问题![6](C:\Users\Administrator\Desktop\复习\素材\pic\sql\6.jpg)
+
+  * 删除
+
+    叶子节点直接删除 考虑下溢问题
+
+    非叶子节点元素 0.找到要删除的结点 1.找到该节点的前驱（小于它的最大值）或 后继(大于它的最小值)，覆盖删除的元素  2.将前驱或 后继删除
+
+    3.下溢解决方案（递归解决）：
+
+    * 如果兄弟节点有至少ceil(m/2)个元素 则将b->右子树最小的位置 a->b原来的位置
+
+    * 如果兄弟节点只有ceil(m/2)-1个元素 将b拿下来跟左右节点合并
+
+      ![7](C:\Users\Administrator\Desktop\复习\素材\pic\sql\7.jpg)
+
+* **Hash**
+
+  由于不支持范围查找 比如id>10只能全部遍历 所以工作中不使用
+
+  ![12](..\素材\pic\sql\12.jpg)
+
+* **B+tree**
+
+  中间节点 不保存数据，只用来索引，所有数据都保存在叶子节点 
+
+  中间节点元素都同时存在于子节点，在子节点元素中是最大（或最小）元素 
+
+  所有的叶子结点中包含了全部索引的信息，及指向含这些索引的记录的指针(即索引所在行的内存地址)，且叶子结点本身依关键字的大小顺序链接（双向指针）。 
+
+* Innodb
+
+  ```mysql
+  create table salary(
+  	id int not null auto_increment primary key,
+  	name varchar(50) not null default '', 
+  	salary varchar(50) not null default '', 
+  	key name(name)
+  )engine=innodb,charset utf8;
+  
+  insert into salary(id,name,salary) values(10,'mly10',100),(5,'mly5',500),
+  (7,'mly7',700),(1,'mly1',100);
+  
+  show variables like '%datadir%'; /var/lib/mysql/
+  cd btree //进入到对应库中
+  ```
+
+  ![8](C:\Users\Administrator\Desktop\复习\素材\pic\sql\8.jpg)
+
+  
+
+  Innodb为了减少磁盘i/0，引入了预读的概念，单位是页（数据都是存储在页中）
+
+  show variables like 'innodb_page_size'; //默认16kB
+
+  * 主键索引（Innodb聚簇索引: 数据和索引放在同一个文件） 
+
+  ![9](C:\Users\Administrator\Desktop\复习\素材\pic\sql\9.jpg)
+
+  ![11jpg](C:\Users\Administrator\Desktop\复习\素材\pic\sql\11jpg.jpg)
+
+  
+
+  假设一个数据节点（叶子节点) 1kB  16条记录
+
+  目录页中一个页号数据节点是 14B =8B(索引 bigint)+6B(磁盘文件地址) 能存 1170条
+
+  两次IO 16*1170=18720个数据
+
+  三次IO  16*1170  *1170 =2190w个数据
+
+  而且b+ tree 第一层和第二层的目录加入到缓存中（比如四层目录只需要2次IO）
+
+  * 普通索引（次级索引） 叶子节点会存储主键id
+
+    ![10](C:\Users\Administrator\Desktop\复习\素材\pic\sql\10.jpg)
+
+    尽量用索引覆盖，由于回表（通过主键id）的磁盘空间不连续，就可能会产生磁盘的随机io
+
+  * 为什么建议建主键，且整型自增
+
+    如果不见，数据库会找一个unqiue的列来维护B+树索引结构来组织数据库记录（不存在unqiue 自增隐藏rowid列） 提高性能
+
+    整型 比较效率高 且减少硬盘消耗
+
+    自增 防止节点上溢分裂导致的性能开销
+
+  * 联合索引 从左往右排序（字段>=3个）
+
+![13](C:\Users\Administrator\Desktop\复习\素材\pic\sql\13.jpg)
+
+
+
+
+
+
+
+
+
+
 
 ### Explain
 
@@ -600,7 +818,17 @@ mysql中都是悲观锁
 
 * select_type 查询类型
 
-  simple:查询中不包含子查询或union查询<br> union result:union的结果<br> derived 在from列表中包含的子查询 子查询中用到的表<br> primary:查询中若包含任何复杂的子部分,最外层查询则被标记为     						primary
+  simple:查询中不包含子查询或union查询<br>
+
+  union:UNION操作中，查询中处于内层的SELECT
+
+   DEPENDENT UNION：UNION操作中，查询中处于内层的SELECT（内层的SELECT语句与外层的SELECT语句有依赖关系）
+
+  union result:union的结果，id值通常为NULL<br>
+
+  MATERIALIZED：被物化的子查询(exists,in)
+
+   derived 在from列表中包含的子查询 子查询中用到的表<br> primary:查询中若包含任何复杂的子部分,最外层查询则被标记为     						primary
 
    subquery 在select 或where 列表中包含了子查询
 
@@ -611,15 +839,19 @@ mysql中都是悲观锁
    system:表只有一行记录,这是const类型的特例,平时不会出现
    const:表示通过索引一次就找到了,const即常量,它用于比较primary key或unique索引,因为只匹配一行数据,所以效率很快,如将主键置于where条件中,mysql就能将该查询转换为一个常量
 
-   eq_ref:唯一性索引扫描,对于每个索引键,表中只有一条记录与之匹配,常见于主键或唯一索引扫描
+   (一般是单表)
+
+   eq_ref:唯一性索引扫描,对于每个索引键,表中只有一条记录与之匹配,常见于主键或唯一索引扫描(一般是关联表)
 
    ref:非唯一性索引扫描,返回匹配某个单独值的行,它可能会找到多个符合条件的行,所以他应该属于查找和扫描的混合体
 
    range:只检索给定范围的行,使用一个**索引**来选择行,如where语句中出现了between,<,>,in等查询,这种范围扫描索引比全表扫描要好，因为它只需要开始于索引的某一点，而结束于另一点，不用扫描全部索引
 
-   index类型只遍历索引树,这通常比All快,因为索引文件通常比数据文件小,index是从索引中读取,all从硬盘中读取
+   index类型只遍历索引树,这通常比All快,因为索引文件通常比数据文件小,index是从索引中读取,all从硬盘中读取(需要回表,跟all一样都是取得了全表的数据)
 
    all:全表扫描,是最差的一种查询类型
+
+   **至少需要range级别**
 
 * possible_keys  可能用到的索引，不一定被真正使用
 
@@ -653,12 +885,24 @@ mysql中都是悲观锁
   Using temporary :使用了临时表保存中间结果,mysql在对查询结果排序时使用临时表,常见于order by和分组查询group by
   Using index:表示相应的select操作中使用了覆盖索引（Covering Index），避免访问了表的数据行，效率不错。如果同时出现using where，表明索引被用来执行索引键值的查找；如果没有同时出现using where，表明索引用来读取数据而非执行查找动作。 其中的覆盖索引含义是所查询的列是和建立的索引字段和个数是一一对应的
   Using where:表明使用了where过滤
+
   Using join buffer:表明使用了连接缓存,如在查询的时候会有多次join,则可能会产生临时表
   impossible where:表示where子句的值总是false,不能用来获取任何元祖
 
   select tables optimized away :在没有GROUPBY子句的情况下，基于索引优化MIN/MAX操作或者对于MyISAM存储引擎优化COUNT(*)操作，不必等到执行阶段再进行计算，查询执行计划生成的阶段即完成优化。 
 
   distinct :优化distinct操作，在找到第一匹配的元组后即停止找同样值的动作 
+
+  ```mysql
+  explain select t1.title, t1.author from t_vue t1  where t1.title='jin1'; //ref Using index
+  explain select t1.title, t1.author from t_vue t1  where author='jin' ; // index  Using where; Using index
+  explain select t1.author from t_vue t1  where author='jin' ; // index  Using where; Using index
+  explain select t1.title, t1.author,t1.img from t_vue t1  where t1.title='jin1'; //all Using where
+  explain select t1.*  from t_vue t1  where t1.title='jin1' and author='jin'  //ref
+  
+  ```
+
+  
 
 * 新增/删除索引 
 
@@ -697,6 +941,7 @@ mysql中都是悲观锁
   ```
   select count(distinct(left(title,Count)))/count(*) from news 
   以较小的Count（相比字段长度而言）获取到越接近0.75的索引选择性
+  count(distinct(left(title,Count))) title字段前count位前缀的不同数量
   ```
 
   ```
@@ -777,201 +1022,7 @@ mysql中都是悲观锁
 
   
 
-* 索引数据结构
-
-  * 二叉树（binary tree）是指树中节点的**度不大于2**的**有序**树 
-
-  		二叉查找树（binary search tree）
-
-  		自增键的话 退化成链表 o(n)
-
-  
-
-  
-
-  * 红黑树 **红黑树其实就是去除二叉查找树顶端优势的解决方案**，从而达到树的平衡 
-
-  Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找树(BST) 
-
-   1. 每个节点都有红色或黑色 
-
-   2. 树的根始终是黑色的 每个叶节点都是不存储数据的黑色空节点
-
-   3. 没有两个相邻的[红色节点](https://www.zhihu.com/search?q=%E7%BA%A2%E8%89%B2%E8%8A%82%E7%82%B9&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A79980618%7D)（红色节点不能有红色父节点或红色子节点，**并没有说不能出现连续的黑色节点**） 
-
-   4. 任意节点到其可到达的叶节点间都具有相同数量的黑色节点 
-
-      
-
-      变色&旋转
-
-      旋转
-
-      * 左旋
-
-        x左旋 让x的右节点y成为x的父节点（调整后x是y的左子树），让**y**的左子树成为x的右子树 
-
-      * 右旋
-
-      - x右旋 让x的左孩子y成为新的父节点（调整后x是y的右子树），让y的右子树成为x的左子树
-
-      插入：
-
-      *  插入 与二叉查找树相同 插入节点颜色红色
-
-      * 修复
-
-        * z是根节点（插入前是空树） 红色->黑色
-
-        * z的叔节点是红色的
-
-          ​	将 parent 和 uncle 标记为黑色 
-
-          ​	将 grand parent (祖父) 标记为红色 
-
-        * z的叔节点是黑色的，且局部呈现直线
-
-          ​	z zparent  zgrand parent在一条直线上
-
-          ​	1. 右边的直线左旋 左边的直线右旋 对 zgrand parent旋转
-
-           2. z原来的parent 和grand parent变色
-
-              3.根节点变黑色
-
-        * z的叔节点是黑色的，且局部呈现三角形
-
-          z zparent  zgrand parent构成了一个三角形
-
-          1. z的父节点右旋
-          2. 参照情况三旋转
-
-        
-
-  * AVL
-
-    平衡[二叉树](https://so.csdn.net/so/search?from=pc_blog_highlight&q=%E4%BA%8C%E5%8F%89%E6%A0%91)的定义是一种递归定义，要求每个节点都具有以下特性：
-
-    1. 可以是一棵空树
-    2. 左子树和右子树高度之差的绝对值不超过1（左右子树的高度差可以为0、1和 -1）
-    3. 左子树和右子树均为平衡二叉树
-
-  
-
-  
-
-  ​	当索引列数据量很大时，由于红黑树高度不可控（会变得很大），mysql没使用红黑树
-
-  * B tree
-
-    平衡的**多路**（多叉）搜索树，多用于文件系统，数据库实现
-
-    高度平衡 每个节点的所有子树高度一致
-
-    m阶b树 节点存储的元素个数最多时m-1个   根节点最少1个 非根节点最少ceil(m/2)-1个
-
-    * 添加
-
-      新添加元素必定是添加到叶子节点
-
-      可能出现上溢的问题（上节点的元素个数必然等于m）
-
-      1. 设上溢节点最中间的位置为k
-      2. 将k位置的元素向上与父节点合并
-      3. 将[0,k-1]和[k+1,m-1]元素分别分裂成节点
-      4. 递归处理父节点上溢问题![6](C:\Users\Administrator\Desktop\复习\素材\pic\sql\6.jpg)
-
-    * 删除
-
-      叶子节点直接删除 考虑下溢问题
-
-      非叶子节点元素 1.找到该节点的前驱（小于它的最大值）或 后继(大于它的最小值)，覆盖删除的元素  2.将前驱或 后继删除
-
-      下溢解决方案（递归解决）：
-
-      * 如果兄弟节点有至少ceil(m/2)个元素 则将b->右子树最小的位置 a->b原来的位置
-
-      * 如果兄弟节点只有ceil(m/2)-1个元素 将b拿下来跟左右节点合并
-
-        ![7](C:\Users\Administrator\Desktop\复习\素材\pic\sql\7.jpg)
-
-  * **Hash**
-
-    由于不支持范围查找 比如id>10只能全部遍历 所以工作中不使用
-
-    ![12](C:\Users\Administrator\Desktop\复习\素材\pic\sql\12.jpg)
-
-  * **B+tree**
-
-    中间节点 不保存数据，只用来索引，所有数据都保存在叶子节点 
-
-    中间节点元素都同时存在于子节点，在子节点元素中是最大（或最小）元素 
-
-    所有的叶子结点中包含了全部元素的信息，及指向含这些元素记录(卫星数据)的指针，且叶子结点本身依关键字的大小顺序链接（双向指针）。 
-
-* Innodb
-
-  ```mysql
-  create table salary(
-  	id int not null auto_increment primary key,
-  	name varchar(50) not null default '', 
-  	salary varchar(50) not null default '', 
-  	key name(name)
-  )engine=innodb,charset utf8;
-  
-  insert into salary(id,name,salary) values(10,'mly10',100),(5,'mly5',500),
-  (7,'mly7',700),(1,'mly1',100);
-  
-  show variables like '%datadir%'; /var/lib/mysql/
-  cd btree //进入到对应库中
-  ```
-
-  ![8](C:\Users\Administrator\Desktop\复习\素材\pic\sql\8.jpg)
-
-  
-
-  Innodb为了减少磁盘i/0，引入了预读的概念，单位是页（数据都是存储在页中）
-
-  show variables like 'innodb_page_size'; //默认16kB
-
-  * 主键索引（Innodb聚簇索引: 数据和索引放在同一个文件） 
-
-  ![9](C:\Users\Administrator\Desktop\复习\素材\pic\sql\9.jpg)
-
-  ![11jpg](C:\Users\Administrator\Desktop\复习\素材\pic\sql\11jpg.jpg)
-
-  
-
-  假设一个数据节点（叶子节点) 1kB  16条记录
-
-  目录页中一个页号数据节点是 14B =8B(索引 bigint)+6B(磁盘文件地址) 能存 1170条
-
-  两次IO 16*1170=18720个数据
-
-  三次IO  16*1170  *1170 =2190w个数据
-
-  而且b+ tree 第一层和第二层的目录加入到缓存中（比如四层目录只需要2次IO）
-
-  * 普通索引（次级索引） 叶子节点会存储主键id
-
-    ![10](C:\Users\Administrator\Desktop\复习\素材\pic\sql\10.jpg)
-
-    尽量用索引覆盖，由于回表（通过主键id）的磁盘空间不连续，就可能会产生磁盘的随机io
-
-  * 为什么建议建主键，且整型自增
-
-    如果不见，数据库会找一个unqiue的列来维护B+树索引结构来组织数据库记录（不存在unqiue 自增隐藏rowid列） 提高性能
-
-    整型 比较效率高 且减少硬盘消耗
-
-    自增 防止节点上溢分裂导致的性能开销
-
-  * 联合索引 从左往右排序（字段>=3个）
-
-![13](C:\Users\Administrator\Desktop\复习\素材\pic\sql\13.jpg)
-
-
-
+* 
 
 
 MySQL是否每次只能使用一个索引？
