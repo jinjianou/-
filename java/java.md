@@ -109,15 +109,26 @@ alt+F8(evaluate expression) 查看表达式的值
 ## 离散知识点
 
 * SE
-  1. default/friendly 同一包下可见 protected 他同一包下或子孙类可见   public>protected>default>private
 
-  2. ^ 异或 相当于**不进位二进制加法**
+  1. 基本数据类型自动类型转化（兼容且源取值范围<目标）： byte→short→int→long→float→double
 
-  3. hash碰撞 两个字符串的hash函数值相同 map里指的是放在同一个bucket中
+     或char→int 
 
-  4. 装载因子 0.75  offers a good  tradeoff(折中) between time and spcace costs.Higher values decrease  the space overhead(loss) but increase lookup cost  同时加大hash碰撞的概率
+     强制类型转化：精度确实
 
-      
+  2. default/friendly 同一包下可见 protected 他同一包下或子孙类可见   public>protected>default>private
+
+  3. java中只有按值传递，并没有所谓的按引用传递 
+
+     只是**对于引用数据类型，传递的是对象的地址**
+
+  4. ^ 异或 相当于**不进位二进制加法**
+
+  5. hash碰撞 两个字符串的hash函数值相同 map里指的是放在同一个bucket中
+
+  6. 装载因子 0.75  offers a good  tradeoff(折中) between time and spcace costs.Higher values decrease  the space overhead(loss) but increase lookup cost  同时加大hash碰撞的概率
+
+       
 
      ```
      newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
@@ -129,11 +140,11 @@ alt+F8(evaluate expression) 查看表达式的值
          n = (tab = resize()).length;
      ```
 
-  5. map bucket length Is  2^n
+  7. map bucket length Is  2^n
 
      hash值不能直接使用（太大) 于是想到% ; 如果除数是2^n 则hash % length等价于 hash & (length -1) 效率比%高
 
-  6. serialVesionUID 若不配置则**在运行时根据类内部细节自动生成**，若变更则看可能发生变化，建议显式声明（配合ObjectStream测试）
+  8. serialVesionUID 若不配置则**在运行时根据类内部细节自动生成**，若变更则看可能发生变化，建议显式声明（配合ObjectStream测试）
 
      * 被序列化的类内部所有属性必须序列化（基本数据类型可序列化）
      * transient修饰的属性会被序列化
@@ -480,6 +491,48 @@ Class<NetworkTest> cls= NetworkTest.class;
 
 # 计算机网络
 
+## 五层模型（实际）
+
+1. 物理层
+
+   电脑要联网，当然要把电脑连起来，可以用光缆、电缆、双绞线、无线电波等方式。 
+
+   **物理层中，将数据的0、1转换为电压和脉冲光（电特性）传输给物理的传输介质** 
+
+2. 数据链路层
+
+   假设两台主机A和B，A和B已经有了连接的介质，现在A给B传输数据，这些数据其实就是一堆的0和1，B主机收到这一堆0和1 要怎么解析呢？多少个电信号算一组？每个信号位有何意义？到底是按8位还是按16位解析？如何解析就是数据链路层干的事情 （解析电信号）
+
+   以太网规定，一组电信号构成一个数据包，叫做"帧"（Frame）。每一帧分成两个部分：标头（Head）和数据（Data）。 
+
+   head包含：（固定18个字节）
+
+   - 发送者（源地址，6个字节）   MAC地址（网卡的地址）
+   - 接收者（目标地址，6个字节） MAC地址（网卡的地址）
+   - 数据类型（6个字节） 
+
+   发送方式为本网络内广播，通过目标地址识别
+
+3. 网络层
+
+   以太网协议，依靠MAC地址发送数据，但是这仅局限于局域网，也就是一个小的网络段 。
+
+   IP地址和子网掩码做AND运算 区分不同的计算机是否属于同一个子网络
+
+   **所以网络层主要就是IP地址管理和路由选择，以IP协议为主，在标头添加Ip地址** 
+
+4. 传输层
+
+   **传输层就是建立"端口到端口"的通信。相比之下，"网络层"的功能是建立"主机到主机"的通信。只要确定主机和端口，我们就能实现程序之间的交流。** 
+
+   传输层的协议主要有UDP和TCP 
+
+5. 应用层
+
+   就是使用不同的协议，如HTTP，FTP等，这些协议规定了具体的数据解析方式 
+
+   ![img](https://img-blog.csdnimg.cn/20190428142430890.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3djYzI3ODU3Mjg1,size_16,color_FFFFFF,t_70) 
+
 ![2](C:\Users\Administrator\Desktop\复习\素材\pic\java\2.jpg)
 
 
@@ -489,6 +542,8 @@ Class<NetworkTest> cls= NetworkTest.class;
 ![2](C:\Users\Administrator\Desktop\复习\素材\pic\java\4.jpg)
 
 
+
+![img](https://pic3.zhimg.com/80/v2-0a749b8af6d8facd140874859b681ef6_1440w.jpg) 
 
 * nc ncat - Concatenate(Connect) and redirect sockets
 
@@ -669,8 +724,25 @@ public class Math {
 
 ![3](C:\Users\Administrator\Desktop\复习\素材\pic\jvm\3.jpg)
 
-1. 一个方法对应一块栈帧内存
-2. ![3](C:\Users\Administrator\Desktop\复习\素材\pic\jvm\3.png)区域
+1. String st1 = new String(“abc”); 创建 了几个对象
+
+   2个 一个在堆内存，一个在常量池，堆内存对象是常量池对象的一个**拷贝副本**（**非引用**）
+
+   - 常量应该在常量池中创建 
+
+   - ​    public String(String original) {
+
+       	 this.value = original.value;
+
+     ​	...
+
+     }
+
+   
+
+2. 一个方法对应一块栈帧内存
+
+3. ![3](C:\Users\Administrator\Desktop\复习\素材\pic\jvm\3.png)区域
 
 动态链接：  在Java源文件被编译到字节码文件时，所有的变量和方法引用都作为符号引用（Symbilic Reference）保存在class文件的常量池里。 **动态链接的作用就是为了将这些符号引用转换为调用方法的直接引用** 
 

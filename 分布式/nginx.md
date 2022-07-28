@@ -467,7 +467,7 @@ location [ = | ~ | ~* | ^~ ] uri { ... }
 
 1. root
 
-   这个指令用于设置请求寻找资源的跟目录，此指令可以在http块、server块或者location块中配置。由于使用Nginx服务器多数情况下要配置多个location块对不同的请求分别做出处理，因此该指令通常在location块中进行设置。
+   这个指令用于设置请求寻找资源的根目录，此指令可以在http块、server块或者location块中配置。由于使用Nginx服务器多数情况下要配置多个location块对不同的请求分别做出处理，因此该指令通常在location块中进行设置。
 
    ```lua
    root path
@@ -477,7 +477,7 @@ location [ = | ~ | ~* | ^~ ] uri { ... }
 
 2. alias
 
-3. index
+3. index 相对root而言没有子路径，就会返回的页面即首页
 
 4. error_page
 
@@ -492,6 +492,8 @@ location [ = | ~ | ~* | ^~ ] uri { ... }
 user www www;
 
 #nginx进程数，建议设置为等于CPU总核心数。
+#Cpu个数  cat /proc/cpuinfo|grep "physical id"|sort|uniq|wc -l
+#核数   cat /proc/cpuinfo|grep "core id"|sort|uniq|wc -l
 worker_processes 8;
  
 #全局错误日志定义类型，[ debug | info | notice | warn | error | crit ]
@@ -518,7 +520,7 @@ events
     #Select、poll属于标准事件模型，如果当前系统不存在更有效的方法，nginx会选择select或poll
     #B）高效事件模型
     #Kqueue：使用于FreeBSD 4.1+, OpenBSD 2.9+, NetBSD 2.0 和 MacOS X.使用双处理器的MacOS X系统使用kqueue可能会造成内核崩溃。
-    #Epoll：使用于Linux内核2.6版本及以后的系统。
+    #Epoll：使用于Linux内核2.6版本及以后的系统。  uname -r
     #/dev/poll：使用于Solaris 7 11/99+，HP/UX 11.22+ (eventport)，IRIX 6.5.15+ 和 Tru64 UNIX 5.1A+。
     #Eventport：使用于Solaris 10。 为了防止出现内核崩溃的问题， 有必要安装安全补丁。
     use epoll;
@@ -527,15 +529,13 @@ events
     #根据硬件调整，和前面工作进程配合起来用，尽量大，但是别把cpu跑到100%就行。每个进程允许的最多连接数，理论上每台nginx服务器的最大连接数为。
     worker_connections 65535;
 
-    #keepalive超时时间。
-    keepalive_timeout 60;
-
     #客户端请求头部的缓冲区大小。这个可以根据你的系统分页大小来设置，一般一个请求头的大小不会超过1k，不过由于一般系统分页都要大于1k，所以这里设置为分页大小。
     #分页大小可以用命令getconf PAGESIZE 取得。
     #[root@web001 ~]# getconf PAGESIZE
     #4096
     #但也有client_header_buffer_size超过4k的情况，但是client_header_buffer_size该值必须设置为“系统分页大小”的整倍数。
-    client_header_buffer_size 4k;
+    #directive is not allowed here
+    #client_header_buffer_size 4k;
 
     #这个将为打开文件指定缓存，默认是没有启用的，max指定缓存数量，建议和打开文件数一致，inactive是指经过多长时间文件没被请求后删除缓存。
     open_file_cache max=65535 inactive=60s;
@@ -635,7 +635,7 @@ http
         #    server 192.168.0.14 weight=10;
         #    server 192.168.0.15 weight=10;
         #}
-        #2、ip_hash
+        #3、ip_hash
         #每个请求按访问ip的hash结果分配，这样每个访客固定访问一个后端服务器，可以解决session的问题。
         #例如：
         #upstream bakend {
@@ -643,14 +643,14 @@ http
         #    server 192.168.0.14:88;
         #    server 192.168.0.15:80;
         #}
-        #3、fair（第三方）
+        #4、fair（第三方）
         #按后端服务器的响应时间来分配请求，响应时间短的优先分配。
         #upstream backend {
         #    server server1;
         #    server server2;
         #    fair;
         #}
-        #4、url_hash（第三方）
+        #5、url_hash（第三方）
         #按访问url的hash结果来分配请求，使每个url定向到同一个后端服务器，后端服务器为缓存时比较有效。
         #例：在upstream中加入hash语句，server语句中不能写入weight等其他的参数，hash_method是使用的hash算法
         #upstream backend {

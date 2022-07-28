@@ -1,6 +1,4 @@
-# Mysql
-
-## 安装(windows)
+# 安装(windows)
 
 1. <https://dev.mysql.com/downloads/mysql/>   注意dbforge版本要跟mysql版本对应 2019 -> 8.2.23
 
@@ -94,7 +92,7 @@ mysql8 修改密码:
 
 
 
-## 基本操作
+# 基本操作
 
 * 写锁 lock Tables tb write; unlock tables;  读写都堵塞
 
@@ -272,9 +270,11 @@ cs: case sensitive，大小写敏感，区分大小写比较
 
 
 
-## 函数
+# 函数
 
-### 字符串
+
+
+## 字符串
 
 mid(field,start,count)  start从1开始 截取字串
 
@@ -294,9 +294,9 @@ like %任意字符串 _任意一个字符
 
 
 
-## 数据类型
+# 数据类型
 
-* tinyint(m) 1个字节 unsiged => (0,256)
+* tinyint(m) 1个字节 unsiged => (0,256)    **tinyint unsiged 而不是unsiged  tinyint** 
 
 		m代表最小显示位数 需要配合zerofill使用生效
 
@@ -350,11 +350,7 @@ SELECT DATE_ADD(NOW(),INTERVAL '20:10' HOUR_MINUTE);
 SELECT DATE_ADD(NOW(),INTERVAL '2 8' DAY_HOUR);
 ```
 
-
-
-
-
-## 视图
+# 视图
 
 视图（view)是从单张或多张表或其他视图构建出来的**虚拟表** 数据库中只存放视图的**定义**，而不存放视图中的数据，数据由引用视图时动态产生
 
@@ -370,7 +366,7 @@ SELECT DATE_ADD(NOW(),INTERVAL '2 8' DAY_HOUR);
 
 * 
 
-## 运行模式
+# 运行模式
 
 查看 select @@sql_mode
 
@@ -405,7 +401,7 @@ where (name2,sex) in (select name2,sex from user)  //多个条件查询
 
 ```
 
-## 多表
+# 多表
 
 `UNION` 用于连接多个查询结果，要保证每个查询返回的列的数量与顺序要一样。
 
@@ -421,9 +417,7 @@ where (name2,sex) in (select name2,sex from user)  //多个条件查询
 
 ​	
 
-
-
-## 外键
+# 外键
 
 外键表示一个表中的字段被另一个表中的一个字段引用。外键对相关表中的数据造成了限制，使MySQL能够保持数据完整性。 
 
@@ -438,7 +432,7 @@ where (name2,sex) in (select name2,sex from user)  //多个条件查询
 
 删除外键： ALTER TABLE stu DROP FOREIGN KEY stu_class;
 
-### 处理动作
+## 处理动作
 
 ON DELETE指在删除时的处理方式，常用的处理方式包括以下几种。
 
@@ -456,9 +450,7 @@ ON UPDATE 指在更新时的处理方式，常用的处理方式包括以下几�
 | ON UPDATE SET NULL                              | 更新父表记录时，比如更改主表的主键时，子表记录设置为NULL     |
 | ON UPDATE NO ACTION /ON UPDATE RESTRICT（默认） | 当在父表（即外键的来源表）中 增加 对应记录时，首先检查该记录是否有对应外键，如果有则不允许 增加 |
 
-
-
-## <u>事务</u>
+# <u>事务</u>
 
 事务是保证多个**SQL操作的一致性**，如果一条失败全部SQL也将失效。 
 
@@ -466,7 +458,7 @@ ON UPDATE 指在更新时的处理方式，常用的处理方式包括以下几�
 
 ![5](C:\Users\Administrator\Desktop\复习\素材\pic\sql\5.jpg)
 
-### 提交模式
+##  隔离级别
 
 * Mysql的提交默认是自动提交  
 
@@ -508,7 +500,7 @@ ON UPDATE 指在更新时的处理方式，常用的处理方式包括以下几�
 		
 				因为InnoDB有MVCC机制（多版本并发控制），可以使用快照读，而不会被阻塞 **版本号** 
 
-## 锁
+# 锁
 
 因为Mysql支持多线程方式，所以可以同时处理多个客户端请求。有时为了防止客户端同时修改数据，我们使用锁操作完成。 
 
@@ -544,11 +536,11 @@ mysql中都是悲观锁
 | 共享锁（读锁 S锁） | 可读不可写 | 能读（即加S锁），不可写（即加X锁）  | LOCK TABLE goods READ，stu READ;                             |
 | 排它锁   (写锁)    | 可读可写   | 不可读（即加S锁）,不可写（即加X锁） | for update(行级锁)                                           LOCK TABLE goods WRITE，stu WRITE; |
 
-## 索引
+# 索引
 
 索引就像一本书的目录一样，我们可以通过一本书的目录，快速的找到需要的页面，但是我们也不能过多的创建目录页（索引），原因是如果某一篇文章删除或修改将发变所有页码的顺序，就需要重新创建目录。 
 
-### 基础思路
+## 基础思路
 
 **选择合理范围内最小的**
 
@@ -558,7 +550,9 @@ mysql中都是悲观锁
 
 数字类型相对字符串类型要简单的多，尤其是在比较运算是，所以我们应该选择最简单的数据类型，比如说在保存时间时，因为PHP可以良好的处理LINUX时间戳所以我们可以将日期存为int(10)要方便、合适、快速的多。
 
-### 字符串
+
+
+## 字符串
 
 字符串数据类型是一个万能数据类型，可以储存数值、字符串等。
 
@@ -566,7 +560,7 @@ mysql中都是悲观锁
 
 如果明确数据在一个完整的集合中如男，女，那么可以使用set或enum数据类型，这种数据类型在运算及储存时以数值方式操作，所以效率要比字符串更好，同时空间占用更少
 
-### 数值类型
+## 数值类型
 
 **整数**
 
@@ -599,15 +593,13 @@ decimal(P,D) P是有效数字精度,D是小数位数
 - 创建过多列的索引会大大增加磁盘空间开销
 - 不要盲目的创建索引，只为查询操作频繁的列创建索引
 
-### 索引类型
+## 索引类型
 
 * UNIQUE唯一索引  不可以出现相同的值，可以有NULL值 
 * INDEX普通索引  允许出现相同的索引内容 
 * PRIMARY KEY主键索引  不允许出现相同的值，且不能为NULL值 
 
-
-
-### 数据结构分析
+## 数据结构分析
 
 [图灵诸葛老师MySQL视频教程全集，MySQL数据库优化+MySQL索引优化（2022最新版）_哔哩哔哩_bilibili](https://www.bilibili.com/video/BV1D44y1Y79z?p=1&vd_source=694ae2fa63787dd0c86c0c90c56dd2e0)
 
@@ -682,7 +674,7 @@ Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找
   1. z的父节点右旋
   2. 参照情况三旋转
 
-​	**当索引列数据量很大时，由于红黑树高度不可控（会变得很大,如id），mysql没使用红黑树**
+		**当索引列数据量很大时，由于红黑树高度不可控（会变得很大,如id），mysql没使用红黑树**
 
 * AVL
 
@@ -782,6 +774,14 @@ Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找
 
   而且b+ tree 第一层和第二层的目录加入到缓存中（比如四层目录只需要2次IO）
 
+  
+
+  数据库索引是存储在磁盘上的，如果数据量很大，必然会导致索引的大小也会很大，超过几个G;
+
+  当我们用索引查询的时候，是不可能将几个G的索引都加载到内存中的，我们能做的只能是只能是
+
+  **每次I/0加载相应的磁盘页**
+
   * 普通索引（次级索引） 叶子节点会存储主键id
 
     ![10](C:\Users\Administrator\Desktop\复习\素材\pic\sql\10.jpg)
@@ -800,17 +800,7 @@ Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找
 
 ![13](C:\Users\Administrator\Desktop\复习\素材\pic\sql\13.jpg)
 
-
-
-
-
-
-
-
-
-
-
-### Explain
+## Explain
 
 * id 索引执行顺序 
 
@@ -952,43 +942,83 @@ Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找
 
   前面字段没出现，只出现后面字段时不走索引
 
-* 查询优化
+##  表关联算法
 
-  * 解析器 非常智能 ，决定是否使用索引或是否进行全表扫描 
+### 嵌套循环连接 Nested-Loop Join(NLJ) 算法 （NLP）
 
-    ```
-    select * from houdunwang where false   //不会操作任何表或索引
-    ```
+​	一次一行循环地从第一张表（称为**驱动表**）中读取行，在这行数据中取到关联字段，根据关联字段在另一张表（**被驱动表**）里取出满足条件的行，然后取出两张表的结果合集。 
 
-  * 索引列参与了计算 不会使用索引 比如 left(sname,1)
+**一般 join 语句中，如果执行计划 Extra 中未出现 Using join buffer 则表示使用的 join 算法是 NLJ。** 
 
-    当算子两边的操作数类型不一致时，MySQL会发生类型转换以使操作数兼容，这些转换是隐式发生的。下面描述了比较操作的**隐式转换**：
+- 当使用left join时，左表是驱动表，右表是被驱动表  
 
-    - 如果一个或两个参数均为NULL，则比较结果为NULL；但是 <=> [相等比较运算符](https://www.zhihu.com/search?q=%E7%9B%B8%E7%AD%89%E6%AF%94%E8%BE%83%E8%BF%90%E7%AE%97%E7%AC%A6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)除外，对于NULL <=> NULL，结果为true，无需转换。
+-  当使用right join时，右表时驱动表，左表是被驱动表  
 
-    - 如果比较操作中的两个参数都是[字符串](https://www.zhihu.com/search?q=%E5%AD%97%E7%AC%A6%E4%B8%B2&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)，则将它们作为字符串进行比较。
+-  当使用join时，mysql会选择数据量比较小的表(参与计算的表的数 ,按照各自的条件过滤 后
 
-    - 如果两个参数都是整数，则将它们作为整数进行比较。
+  )作为驱动表，大表作为被驱动表。
 
-    - 如果[十六进制](https://www.zhihu.com/search?q=%E5%8D%81%E5%85%AD%E8%BF%9B%E5%88%B6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)不是和数字作比较，它会被视作是[二进制](https://www.zhihu.com/search?q=%E4%BA%8C%E8%BF%9B%E5%88%B6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)字符串。
+- 写多表连接sql时如果明确知道哪张表是小表可以用straight_join写法固定连接驱动方式，省去mysql优化器自己判断的时间. （慎重）
 
-    - 如果参数之一是TIMESTAMP或DATETIME列，而另一个参数是常量，则在执行比较之前，该常量将转换为[时间戳](https://www.zhihu.com/search?q=%E6%97%B6%E9%97%B4%E6%88%B3&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)，但对于IN() 内的参数不执行此操作。为了安全起见，在进行比较时，请始终使用完整的时间、日期或时间字符串。例如，要在日期和时间参数上使用 BETWEEN 函数时，最好使用 CAST() 函数把参数显示转换成所需的数据类型。
+  `select * from t2 straight_join t1 on t2.a = t1.a;` 代表指定mysql选着 **t2 表作为驱动表** 
 
-    - 一个或多个表中的[单行子查询](https://www.zhihu.com/search?q=%E5%8D%95%E8%A1%8C%E5%AD%90%E6%9F%A5%E8%AF%A2&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)不视为常量。例如，如果子查询返回的整数要与DATETIME值进行比较，则比较将作为两个整数完成，子查询返回的整数不转换为时间值。参见上一条，这种情况下请使用CAST()将子查询的结果整数值转换为DATETIME。
+驱动表n1条记录，被驱动表n2（有索引）  共需扫描O(n1)
 
-    - 如果参数之一是十进制值，则比较取决于另一个参数。如果另一个参数是[十进制](https://www.zhihu.com/search?q=%E5%8D%81%E8%BF%9B%E5%88%B6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)或整数值，则将参数作为十进制值进行比较；如果另一个参数是浮点值，则将参数作为浮点值进行比较。
+**如果被驱动表的关联字段没索引，使用NLJ算法性能会比较低 ，mysql会选择Block Nested-Loop Join算法。** 
 
-    - **在所有其他情况下，将参数作为浮点数（实数）进行比较**。例如，将字符串和数字操作数进行比较，将其作为浮点数的比较。
+​	内存中计算速度更快
 
-      
+## 基于块的嵌套循环连接 Block Nested-Loop Join（BNJ）
 
-      所以索引列是字符串时，如果传入的条件参数是整数 
+ 把驱动表的数据读入到 join_buffer 中，然后扫描被驱动表，把被驱动表每一行取出来跟 join_buffer 中的数据做对比 
 
-      MySQL在执行我们的查询SQL时，会 **CAST 函数**把每一行主键列的值转换成浮点数，然后再与条件参数做比较。而 InnoDB 存储引擎中，在索引列上使用函数会导致索引失效，所以最后导致了全表扫描。 
+驱动表n1条记录，被驱动表n2（无索引）  共需扫描O(n1*n2)
 
-  * %不会走索引%    %不会走索引    会走索引% 当组合索引时只要所有索引列都参与条件删选 %会走索引%
 
-  * 正则表达式也不会使用索引 
+
+如果放不下驱动表的所有数据话，策略很简单，就是**分段放**。 比如 t2 表有1000行记录， join_buffer 一次只能放800行数据，那么执行过程就是先往 join_buffer 里放800行记录，然后从 t1 表里取数据跟 join_buffer 中数据对比得到部分结果，然后清空 join_buffer ，再放入 t2 表剩余200行记录，再次从 t1 表里取数据跟 join_buffer 中数据对比。
+
+join_buffer 的大小是由参数 **join_buffer_size** 设定的，默认值是 256k。 
+
+
+
+## 查询优化
+
+* 解析器 非常智能 ，决定是否使用索引或是否进行全表扫描 
+
+  ```
+  select * from houdunwang where false   //不会操作任何表或索引
+  ```
+
+* 索引列参与了计算 不会使用索引 比如 left(sname,1)
+
+  当算子两边的操作数类型不一致时，MySQL会发生类型转换以使操作数兼容，这些转换是隐式发生的。下面描述了比较操作的**隐式转换**：
+
+  - 如果一个或两个参数均为NULL，则比较结果为NULL；但是 <=> [相等比较运算符](https://www.zhihu.com/search?q=%E7%9B%B8%E7%AD%89%E6%AF%94%E8%BE%83%E8%BF%90%E7%AE%97%E7%AC%A6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)除外，对于NULL <=> NULL，结果为true，无需转换。
+
+  - 如果比较操作中的两个参数都是[字符串](https://www.zhihu.com/search?q=%E5%AD%97%E7%AC%A6%E4%B8%B2&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)，则将它们作为字符串进行比较。
+
+  - 如果两个参数都是整数，则将它们作为整数进行比较。
+
+  - 如果[十六进制](https://www.zhihu.com/search?q=%E5%8D%81%E5%85%AD%E8%BF%9B%E5%88%B6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)不是和数字作比较，它会被视作是[二进制](https://www.zhihu.com/search?q=%E4%BA%8C%E8%BF%9B%E5%88%B6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)字符串。
+
+  - 如果参数之一是TIMESTAMP或DATETIME列，而另一个参数是常量，则在执行比较之前，该常量将转换为[时间戳](https://www.zhihu.com/search?q=%E6%97%B6%E9%97%B4%E6%88%B3&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)，但对于IN() 内的参数不执行此操作。为了安全起见，在进行比较时，请始终使用完整的时间、日期或时间字符串。例如，要在日期和时间参数上使用 BETWEEN 函数时，最好使用 CAST() 函数把参数显示转换成所需的数据类型。
+
+  - 一个或多个表中的[单行子查询](https://www.zhihu.com/search?q=%E5%8D%95%E8%A1%8C%E5%AD%90%E6%9F%A5%E8%AF%A2&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)不视为常量。例如，如果子查询返回的整数要与DATETIME值进行比较，则比较将作为两个整数完成，子查询返回的整数不转换为时间值。参见上一条，这种情况下请使用CAST()将子查询的结果整数值转换为DATETIME。
+
+  - 如果参数之一是十进制值，则比较取决于另一个参数。如果另一个参数是[十进制](https://www.zhihu.com/search?q=%E5%8D%81%E8%BF%9B%E5%88%B6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)或整数值，则将参数作为十进制值进行比较；如果另一个参数是浮点值，则将参数作为浮点值进行比较。
+
+  - **在所有其他情况下，将参数作为浮点数（实数）进行比较**。例如，将字符串和数字操作数进行比较，将其作为浮点数的比较。
+
+    
+
+    所以索引列是字符串时，如果传入的条件参数是整数 
+
+    MySQL在执行我们的查询SQL时，会 **CAST 函数**把每一行主键列的值转换成浮点数，然后再与条件参数做比较。而 InnoDB 存储引擎中，在索引列上使用函数会导致索引失效，所以最后导致了全表扫描。 
+
+* %不会走索引%    %不会走索引    会走索引% 当组合索引时只要所有索引列都参与条件删选 %会走索引%
+
+* 正则表达式也不会使用索引 
 
 * 慢查询
 
@@ -1022,7 +1052,7 @@ Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找
 
   
 
-* 
+##
 
 
 MySQL是否每次只能使用一个索引？
@@ -1054,7 +1084,15 @@ select count(1) from table1 where column1 = 1 and column2 = 'foo' and column3 = 
 
 where b='x' 发现key走了组合索引，再看rows,extra(using where)后，发现原来是走了[覆盖索引](https://so.csdn.net/so/search?q=%E8%A6%86%E7%9B%96%E7%B4%A2%E5%BC%95&spm=1001.2101.3001.7020)，但是查询的时候还是进行了全表扫描，我们可以看到rows=5以及Extra里的Using where，只不过select * 查询的字段恰好能从组合索引（覆盖索引）中取到，优化器会使用该索引，避免去回表查询。
 
-### 
+# MVCC
+
+# 日志
+
+## redo
+
+## undo
+
+
 
 SELECT IFNULL((SELECT  Salary 
 FROM Employee2
