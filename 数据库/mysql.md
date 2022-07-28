@@ -727,7 +727,7 @@ Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找
 
 * **Hash**
 
-  由于不支持范围查找 比如id>10只能全部遍历 所以工作中不使用
+  由于**不支持范围查找** 比如id>10只能全部遍历 **适用不用范围查找的字段**
 
   ![12](..\素材\pic\sql\12.jpg)
 
@@ -739,15 +739,45 @@ Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找
 
   所有的叶子结点中包含了全部索引的信息，及指向含这些索引的记录的指针(即索引所在行的内存地址)，且叶子结点本身依关键字的大小顺序链接（双向指针）。 
 
-* Innodb
+  1. 性能分析
+
+     B树不管叶子节点还是非叶子节点，都会保存数据，这样导致在非叶子节点中能保存的指针数量变少（有些资料也称为扇出），指针少的情况下要保存大量数据，只能增加树的高度，导致IO操作变多，查询性能变低；
+
+     Innodb为了减少磁盘i/0，引入了预读的概念，单位是页（数据都是存储在页中）,**最小存储单元**
+
+     show variables like 'innodb_page_size'; //默认16kB
+
+     
+
+     
+
+     ![9](C:\Users\Administrator\Desktop\复习\素材\pic\sql\9.jpg)
+
+     ![11jpg](C:\Users\Administrator\Desktop\复习\素材\pic\sql\11jpg.jpg)
+
+     
+
+     假设一个数据节点（叶子节点) 1kB  16条记录
+
+     目录页中一个页号数据节点是 14B =8B(索引 bigint)+6B(磁盘文件地址) 能存 1170条
+
+     两次IO 最多16*1170=18720个数据
+
+     三次IO  最多16*1170  *1170 =2190w个数据
+
+     而且b+ tree **mysql启动时会将第一层和第二层的目录加入到缓存中**(预读)（比如三层目录只要将叶子节点加载到内存一次I/O,四层目录只需要2次IO）
+
+  2. 数据表文件组织方式
+
+  
 
   ```mysql
-  create table salary(
+  table salary(
   	id int not null auto_increment primary key,
   	name varchar(50) not null default '', 
   	salary varchar(50) not null default '', 
   	key name(name)
-  )engine=innodb,charset utf8;
+  )engine=innodb|MyIsam,charset utf8;
   
   insert into salary(id,name,salary) values(10,'mly10',100),(5,'mly5',500),
   (7,'mly7',700),(1,'mly1',100);
@@ -756,47 +786,45 @@ Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找
   cd btree //进入到对应库中
   ```
 
+  
+
+  myIsam  索引文件和数据文件分开 MYI  MYD(非聚集)
+
+  innodb   索引和数据在idb文件中(聚集)
+
+  
+
   ![8](C:\Users\Administrator\Desktop\复习\素材\pic\sql\8.jpg)
 
   
 
-  Innodb为了减少磁盘i/0，引入了预读的概念，单位是页（数据都是存储在页中）
+3. 索引类型
 
-  show variables like 'innodb_page_size'; //默认16kB
+* 聚集(聚簇)索引 innodb的索引方式(MYISAM用的就是非聚集索引,需要回表)   的叶子结点存储索引字段值和表中其他字段值(也就是完整的数据记录)
 
-  * 主键索引（Innodb聚簇索引: 数据和索引放在同一个文件） 
+  * 主键索引
 
-  ![9](C:\Users\Administrator\Desktop\复习\素材\pic\sql\9.jpg)
+  * 普通索引（次级索引）非主键索引 叶子节点存储的主键id(一致性和节省存储空间)
 
-  ![11jpg](C:\Users\Administrator\Desktop\复习\素材\pic\sql\11jpg.jpg)
+    需要拿主键再进行一次主键索引查找(回表)
 
-  
 
-  假设一个数据节点（叶子节点) 1kB  16条记录
 
-  目录页中一个页号数据节点是 14B =8B(索引 bigint)+6B(磁盘文件地址) 能存 1170条
+![10](C:\Users\Administrator\Desktop\复习\素材\pic\sql\10.jpg)
 
-  两次IO 16*1170=18720个数据
+尽量用索引覆盖，由于回表（通过主键id）的磁盘空间不连续，就可能会产生磁盘的随机io
 
-  三次IO  16*1170  *1170 =2190w个数据
 
-  而且b+ tree 第一层和第二层的目录加入到缓存中（比如四层目录只需要2次IO）
 
-  * 普通索引（次级索引） 叶子节点会存储主键id
+为什么建议建主键，且整型自增?
 
-    ![10](C:\Users\Administrator\Desktop\复习\素材\pic\sql\10.jpg)
+如果不建，数据库会找一个可以建unqiue索引的列来维护B+树索引结构来组织数据库记录（不存在unqiue 自增隐藏类似rowid的列） 提高性能
 
-    尽量用索引覆盖，由于回表（通过主键id）的磁盘空间不连续，就可能会产生磁盘的随机io
+整型 比较效率高 且减少硬盘消耗
 
-  * 为什么建议建主键，且整型自增
+自增 防止节点[上溢]分裂导致的性能开销
 
-    如果不见，数据库会找一个unqiue的列来维护B+树索引结构来组织数据库记录（不存在unqiue 自增隐藏rowid列） 提高性能
-
-    整型 比较效率高 且减少硬盘消耗
-
-    自增 防止节点上溢分裂导致的性能开销
-
-  * 联合索引 从左往右排序（字段>=3个）
+* 联合索引 从左往右排序
 
 ![13](C:\Users\Administrator\Desktop\复习\素材\pic\sql\13.jpg)
 
@@ -815,6 +843,8 @@ Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找
 * id 索引执行顺序 
 
   id相同,执行顺序由上至下<br>id不同,id值越大,优先级越高,越先被执行
+
+  id为null,最后执行
 
 * select_type 查询类型
 
@@ -883,7 +913,7 @@ Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找
 
   Using filesort:说明mysql会对数据使用一个外部的索引排序,而不是按照表内的索引顺序进行读取,mysql中**无法利用索引完成的排序**操作称为"文件排序"
   Using temporary :使用了临时表保存中间结果,mysql在对查询结果排序时使用临时表,常见于order by和分组查询group by
-  Using index:表示相应的select操作中使用了覆盖索引（Covering Index），避免访问了表的数据行，效率不错。如果同时出现using where，表明索引被用来执行索引键值的查找；如果没有同时出现using where，表明索引用来读取数据而非执行查找动作。 其中的覆盖索引含义是所查询的列是和建立的索引字段和个数是一一对应的
+  Using index:表示相应的select操作中使用了覆盖索引（Covering Index），避免访问了表的数据行，效率不错。如果同时出现using where，表明索引被用来执行索引键值的查找；如果没有同时出现using where，表明索引用来读取数据而非执行查找动作。 其中的覆盖索引含义是所查询的列是和建立的索引字段和个数(**包含主键**)是一一对应的
   Using where:表明使用了where过滤
 
   Using join buffer:表明使用了连接缓存,如在查询的时候会有多次join,则可能会产生临时表
@@ -892,6 +922,10 @@ Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找
   select tables optimized away :在没有GROUPBY子句的情况下，基于索引优化MIN/MAX操作或者对于MyISAM存储引擎优化COUNT(*)操作，不必等到执行阶段再进行计算，查询执行计划生成的阶段即完成优化。 
 
   distinct :优化distinct操作，在找到第一匹配的元组后即停止找同样值的动作 
+
+  
+
+  key(title,author)
 
   ```mysql
   explain select t1.title, t1.author from t_vue t1  where t1.title='jin1'; //ref Using index
@@ -1024,7 +1058,6 @@ Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找
 
 * 
 
-
 MySQL是否每次只能使用一个索引？
 答案当然不是的，MySQL每次可以使用多个索引，即 index merge（索引合并），但大多数情况下都只会使用一个索引，那这是为什么咧？
 
@@ -1054,7 +1087,61 @@ select count(1) from table1 where column1 = 1 and column2 = 'foo' and column3 = 
 
 where b='x' 发现key走了组合索引，再看rows,extra(using where)后，发现原来是走了[覆盖索引](https://so.csdn.net/so/search?q=%E8%A6%86%E7%9B%96%E7%B4%A2%E5%BC%95&spm=1001.2101.3001.7020)，但是查询的时候还是进行了全表扫描，我们可以看到rows=5以及Extra里的Using where，只不过select * 查询的字段恰好能从组合索引（覆盖索引）中取到，优化器会使用该索引，避免去回表查询。
 
-### 
+# MVCC
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 SELECT IFNULL((SELECT  Salary 
 FROM Employee2
