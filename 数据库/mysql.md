@@ -1020,6 +1020,8 @@ join_buffer 的大小是由参数 **join_buffer_size** 设定的，默认值是 
 
 
 
+
+
 ## 查询优化
 
 * 解析器 非常智能 ，决定是否使用索引或是否进行全表扫描 
@@ -1032,7 +1034,7 @@ join_buffer 的大小是由参数 **join_buffer_size** 设定的，默认值是 
 
   当算子两边的操作数类型不一致时，MySQL会发生类型转换以使操作数兼容，这些转换是隐式发生的。下面描述了比较操作的**隐式转换**：
 
-  - 如果一个或两个参数均为NULL，则比较结果为NULL；但是 <=> [相等比较运算符](https://www.zhihu.com/search?q=%E7%9B%B8%E7%AD%89%E6%AF%94%E8%BE%83%E8%BF%90%E7%AE%97%E7%AC%A6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)除外，对于NULL <=> NULL，结果为true，无需转换。
+  - 如果一个或两个参数均为NULL，则比较结果为NULL；但是 <=> [相等比较运算符](https://www.zhihu.com/search?q=%E7%9B%B8%E7%AD%89%E6%AF%94%E8%BE%83%E8%BF%90%E7%AE%97%E7%AC%A6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)除外，对于ANY <=> NULL，结果为null，无需转换。
 
   - 如果比较操作中的两个参数都是[字符串](https://www.zhihu.com/search?q=%E5%AD%97%E7%AC%A6%E4%B8%B2&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22%3A%22article%22%2C%22sourceId%22%3A428772173%7D)，则将它们作为字符串进行比较。
 
@@ -1121,51 +1123,183 @@ select count(1) from table1 where column1 = 1 and column2 = 'foo' and column3 = 
 
 where b='x' 发现key走了组合索引，再看rows,extra(using where)后，发现原来是走了[覆盖索引](https://so.csdn.net/so/search?q=%E8%A6%86%E7%9B%96%E7%B4%A2%E5%BC%95&spm=1001.2101.3001.7020)，但是查询的时候还是进行了全表扫描，我们可以看到rows=5以及Extra里的Using where，只不过select * 查询的字段恰好能从组合索引（覆盖索引）中取到，优化器会使用该索引，避免去回表查询。
 
-# MVCC
 
+
+
+
+# 缓冲池
+
+![x](.\mysql.assets\x.png)
+
+
+
+![2021113115620229](.\mysql.assets\2021113115620229.png)
+
+缓冲池很大程度减少了磁盘 I/O 带来的开销，通过将操作的数据行所在的数据页加载到缓冲池可以提高 SQL 的执行速度。
+
+为了减少磁盘 I/O，Innodb 通过在缓冲池中提前读取多个数据页来进行优化，这种方式叫作预读。
+
+## 数据淘汰
+
+传统LRU淘汰法
+
+Least Recently Used
+
+假设采用数组/链表方式存储数据页,头指针指向最近使用到的页,尾指针则相反
+
+1. 缓存页已经在缓冲池中,将该页放在头部
+2. 缓存页不在缓冲池中,将该页放在头部,并淘汰尾部数据页
+
+ 存在的问题:
+
+- 预读失效 : 预读的页始终没被mysql读取直到被淘汰
+
+- 缓冲池污染: 一个sql要扫描大量数据时,可能导致缓冲池的所有页都替换初期
+
+
+
+解决方法1-预读失效:
+
+将LRU分为两部分 将LRU分为两部分 : 新生代 , 老年代(也可称作冷热区)
+
+新生代 , 老年代首尾相连
+
+新页加入缓冲池前,先加入到老生带头部
+
+- 如果数据真正的被读取,才会加入到老生带中
+
+- 如果数据没有被读取,则会比新生代的"热数据"更早的淘汰出缓冲池
+
+  
+
+![20191111230628282](.\mysql.assets\20191111230628282.png)
+
+
+
+解决方法2-缓冲池污染:
+
+![20191111232359139](E:\-\数据库\mysql.assets\20191111232359139.png)
+
+参数：innodb_buffer_pool_size  //默认128M
+介绍：配置缓冲池的大小，在内存允许的情况下，DBA往往会建议调大这个参数，越多数据和索引放到内存里，数据库的性能会越好。 
+
+参数：innodb_old_blocks_pct
+介绍：老生代占整个LRU链长度的比例，默认是37，即整个LRU中新生代与老生代长度比例是63:37。
+画外音：如果把这个参数设为100，就退化为普通LRU了。
+
+
+
+参数：innodb_old_blocks_time
+介绍：老生代停留时间窗口，单位是毫秒，默认是1000，即同时满足“被访问”与“在老生代停留时间超过1秒”两个条件，才会被插入到新生代头部。
+
+# MVCC
 
 # 日志
 
-## redo
-
-## undo
 
 
+![20200801185443969](.\mysql.assets\20200801185443969.png)
 
 
 
+[(3条消息) redo日志对于事务提交后，数据绝对不会丢失的意义_佟印龙的博客-CSDN博客](https://blog.csdn.net/weixin_44583135/article/details/114868502)
 
+## binlog
 
+`binlog` 用于**记录数据库执行的写入性操作**(不包括查询)信息，**以二进制的形式保存在磁盘中**。`binlog` 是 `mysql`的逻辑日志，并且由 `Server` 层进行记录，使用任何存储引擎的 `mysql` 数据库都会记录 `binlog` 日志。
 
+- **逻辑日志**：可以简单理解为记录的就是sql语句 。
+- **物理日志**：`mysql` 数据最终是保存在数据页中的，物理日志记录的就是数据页变更 。
 
+`binlog` 是通过追加的方式进行写入的，可以通过`max_binlog_size` 参数设置每个 `binlog`文件的大小(默认1G)，当文件大小达到给定值之后，会生成新的文件来保存日志。
 
+### 使用场景
 
+在实际应用中， `binlog` 的主要使用场景有两个，分别是 **主从复制** 和 **数据恢复** 。
 
+1. **主从复制** ：在 `Master` 端开启 `binlog` ，然后将 `binlog`发送到各个 `Slave` 端， `Slave` 端重放 `binlog` 从而达到主从数据一致。
+2. **数据恢复** ：通过使用 `mysqlbinlog` 工具来恢复数据。
 
+### 刷盘时机
 
+对于 `InnoDB` 存储引擎而言，只有在事务提交时才会记录`biglog` ，此时记录还在内存中，那么 `biglog`是什么时候刷到磁盘中的呢？`mysql` 通过 `sync_binlog` 参数控制 `biglog` 的刷盘时机，取值范围是 `0-N`：
 
+- 0：不去强制要求，由系统自行判断何时写入磁盘；
+- 1：每次 `commit` 的时候都要将 `binlog` 写入磁盘；
+- N：每N个事务，才会将 `binlog` 写入磁盘。
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+从上面可以看出， `sync_binlog` 最安全的是设置是 `1` ，这也是`MySQL 5.7.7`之后版本的默认值。但是设置一个大一些的值可以提升数据库性能，因此实际情况下也可以将值适当调大，牺牲一定的一致性来获取更好的性能。
 
 
 
 
 
+### 日志格式
+
+`binlog` 日志有三种格式，分别为 `STATMENT` 、 `ROW` 和 `MIXED`。
+
+> 在 `MySQL 5.7.7` 之前，默认的格式是 `STATEMENT` ， `MySQL 5.7.7` 之后，默认值是 `ROW`。日志格式通过 `binlog_format` 指定。
+
+- `STATMENT`：基于`SQL` 语句的复制( `statement-based replication, SBR` )，每一条会修改数据的sql语句会记录到`binlog` 中 。
+
+- - 优点：不需要记录每一行的变化，减少了 binlog 日志量，节约了 IO , 从而提高了性能；
+  - 缺点：在某些情况下会导致主从数据不一致，比如执行sysdate() 、 slepp() 等 。
+
+- `ROW`：基于行的复制(`row-based replication, RBR` )，不记录每条sql语句的上下文信息，仅需记录哪条数据被修改了 。
+
+- - 优点：不会出现某些特定情况下的存储过程、或function、或trigger的调用和触发无法被正确复制的问题 ；
+  - 缺点：会产生大量的日志，尤其是` alter table ` 的时候会让日志暴涨
+
+- `MIXED`：基于`STATMENT` 和 `ROW` 两种模式的混合复制(`mixed-based replication, MBR` )，一般的复制使用`STATEMENT` 模式保存 `binlog` ，对于 `STATEMENT` 模式无法复制的操作使用 `ROW` 模式保存 `binlog`
+
+## redolog
+
+**为什么需要redo log**
+
+我们都知道，事务的四大特性里面有一个是 **持久性** ，具体来说就是**只要事务提交成功，那么对数据库做的修改就被永久保存下来了，不可能因为任何原因再回到原来的状态** 。
+
+那么 `mysql`是如何保证持久性的呢？最简单的做法是在每次事务提交的时候，将该事务涉及修改的数据页全部刷新到磁盘中。但是这么做会有严重的性能问题，主要体现在两个方面：
+
+1. 因为 `Innodb` 是以 `页` 为单位进行磁盘交互的，而一个事务很可能只修改一个数据页里面的几个字节，这个时候将完整的数据页刷到磁盘的话，太浪费资源了！
+2. 一个事务可能涉及修改多个数据页，并且这些数据页在物理上并不连续，使用随机IO写入性能太差！
+
+因此 `mysql` 设计了 `redo log` ， **具体来说就是只记录事务对数据页做了哪些修改**，这样就能完美地解决性能问题了(相对而言文件更小并且是顺序IO)。undolog
+
+
+
+### 基本概念
+
+redo log 包括两部分：一个是内存中的日志缓冲( redo log buffer )，另一个是磁盘上的日志文件( redo logfile)。mysql 每执行一条 DML 语句，先将记录写入 redo log buffer，后续某个时间点再一次性将多个操作记录写到 redo log file。这种 先写日志，再写磁盘 的技术就是 MySQL里经常说到的 WAL(Write-Ahead Logging) 技术。在计算机操作系统中，用户空间( user space)下的缓冲区数据一般情况下是无法直接写入磁盘的，中间必须经过操作系统内核空间( kernel space )缓冲区( OS Buffer )。因此， **redo log buffer 写入 redo logfile 实际上是先写入 OS Buffer ，然后再通过系统调用 fsync() 将其刷到 redo log file中**
+
+`mysql` 支持三种将 `redo log buffer` 写入 `redo log file` 的时机，可以通过 `innodb_flush_log_at_trx_commit` 参数配置
+
+
+
+0 **每隔1 秒钟**会将log buffer中的数据写入到文件 **最极端的情况是丢失1 秒时间的数据变更**
+
+1(默认) **每次事务的结束**log thread将log buffer写入到OS Buffer,**并调用fsync()将其刷新到log file中**  **不会丢失任何已经提交的数据**
+
+2 **每次事务的结束**log thread将log buffer写入到OS Buffer 单并**不调用fsync()将其刷新到log file中**
+
+
+
+### redo log记录形式
+
+循环写
+
+redo log的大小是固定的,日志上的记录修改落盘后，日志会被覆盖掉，无法用于数据回滚/数据恢复等操作
+
+### 以上两种区别
+
+由 `binlog` 和 `redo log` 的区别可知：
+
+`binlog` 日志只用于归档，只依靠 `binlog` 是没有 `crash-safe` 能力的。
+
+但只有 `redo log` 也不行，因为 `redo log` 是 `InnoDB`特有的，且日志上的记录落盘后会被覆盖掉。因此需要 `binlog`和 `redo log`二者同时记录，才能保证当数据库发生宕机重启时，数据不会丢失
+
+## unlog
+
+数据库事务四大特性中有一个是 **原子性** ，具体来说就是 **原子性是指对数据库的一系列操作，要么全部成功，要么全部失败，不可能出现部分成功的情况**。实际上， **原子性** 底层就是通过 `undo log` 实现的。`undo log`主要记录了数据的逻辑变化，比如一条 `INSERT` 语句，对应一条`DELETE` 的 `undo log` ，对于每个 `UPDATE` 语句，对应一条相反的 `UPDATE` 的 `undo log` ，这样在发生错误时，就能回滚到事务之前的数据状态。同时， `undo log` 也是 `MVCC`(多版本并发控制)实现的关键。
 
 
 
@@ -1181,7 +1315,11 @@ where b='x' 发现key走了组合索引，再看rows,extra(using where)后，发
 
 
 
->>>>>>> 0e3a448f65e92dd247e813debe34ea40db4b4e88
+
+
+
+
+
 
 
 
