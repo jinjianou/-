@@ -2241,7 +2241,13 @@ spring.datasource.filters=stat,wall,log4j
        </build>
    ```
 
-   ​     注意：1.  默认xml文件生成时都是每次累加的
+   ​     注意：
+
+   0. mysql-connector-java dependency必须加，哪怕之前已经导入了mysql-connector-java
+
+   1. 默认xml文件生成时都是每次累加的
+
+   
 
       2. overwrite is only used for java files ,xml files is always be merged if suppressAllComment=true
 

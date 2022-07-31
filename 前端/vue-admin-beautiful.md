@@ -521,5 +521,8 @@ router.afterEach(() => {
 
    - this.$vnode(虚拟结点)
 
-     
+   - this.$nextTick
 
+     next tick 下一xxx 联系上下文 如 next tick of clock 下一时刻 ... rain fall, the next tick is a never- ending 下一滴雨
+
+https://www.cnblogs.com/jin-zhe/p/9985436.html
