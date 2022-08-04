@@ -832,6 +832,41 @@ Red-Black Tree 「RBT」是一个自平衡(不是绝对的平衡)的二叉查找
 
 ![13](C:\Users\Administrator\Desktop\复习\素材\pic\sql\13.jpg)
 
+
+
+
+
+## idb文件分析
+
+SELECT A.Name,PAGE_NO FROM INFORMATION_SCHEMA.INNODB_TABLES A LEFT JOIN INFORMATION_SCHEMA.INNODB_INDEXES B ON A.TABLE_ID =B.TABLE_ID WHERE A.NAME = 'pagehelper/t_vue_copy';
+
+
+
+pagehelper/t_vue	idx_datetime	6
+pagehelper/t_vue	idx_text	7
+pagehelper/t_vue	t_vue_ind1	5
+pagehelper/t_vue	PRIMARY	4
+
+
+
+由此可知,主键索引页page_no和其他索引的
+
+
+
+pagehelper/t_vue_copy	PRIMARY	4
+
+根据《InnoDB存储引擎》中描述在page number的64偏移量位置后前2个字节，保存了page level的值，因此我们想要的page 
+
+即16384*4+64=65536+64=65600   0x10040
+
+通过hexdump/wxHexEditor等16进制数据工具可知
+
+00 02即   树高=page level+1=3
+
+
+
+
+
 ## Explain
 
 * id 索引执行顺序 

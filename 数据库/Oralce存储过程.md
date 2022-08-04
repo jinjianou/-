@@ -249,17 +249,17 @@ end 过程名;
 ### 调用
 
 ```
---方式一 test window
+--方式一 sql window
 begin
     过程名;
 end;
 
 --方式二 command window
 exec 过程名;
-
---方式三 sql window
+或
 call 过程名(...);
-```
+
+
 
 ### hello world
 
@@ -283,6 +283,9 @@ exec p_first;
 call p_first();
 ```
 
+sqlWindow有个output的子窗口
+command 需要set serveroutput on begin ...;
+
 ## 参数
 
 1. 输入: 参数名  in  参数类型(不需要带具体位数 比如varchar2而不是varchar2(30))
@@ -294,7 +297,7 @@ call p_first();
    NOCOPY 只是一个编译器暗示,不一定总是起作用,**传引用**方式,**会在赋值的时候立即生效**(默认是以传值的方式进行调用的) 使得形参和ACTUAL VALUE指向同一内存地址
 
 默认情况下,out和 in out参数通过传值方式,in参数传引用.程序执行前IN OUT参数的实际值将被复制给形参,如果程序正常退出,这些值将被复制回原参数.如果程序异常退出,那么原参数不会改变.且当参数是大数据结构,通过传值方式的copy动作会导致程序执行速度下降,内存增大.
-   
+
 
 ```
 create or replace procedure p_first(v_a in integer,v_row out tab%rowtype) as
@@ -302,6 +305,10 @@ begin
     select * into v_row from tab where id=v_a;
 end p_first;
 /
+注意:
+如果查询结果为空 procedure创建不报错
+1.字段   运行ORA-01403: no data found
+2. 集合函数(字段)会在在处理的时候会自动引入null值  运行也不会报错
 
 declare
     v_row  tab%rowtype;

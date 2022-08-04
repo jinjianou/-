@@ -726,7 +726,26 @@ public class Math {
 
 1. String st1 = new String(“abc”); 创建 了几个对象
 
-   2个 一个在堆内存，一个在常量池，堆内存对象是常量池对象的一个**拷贝副本**（**非引用**）
+   1或2个 当JVM遇到上述代码时，会先检索常量池中是否存在“abc”，如果不存在“abc”这个字符串，则会先在常量池中创建这个一个字符串。然后再执行new操作，会在堆内存中创建一个存储“abc”的String对象，对象的引用赋值给str2。此过程创建了2个对象。若常量池里存在,则1个
+   
+2. String str = "abc" + "def";   1个 JVM会优化
+3. String str = "abc" + new String("def"); 5个
+	4个字符串对象:常量池中分别有“abc”和“def”，堆中对象new String(“def”)和“abcdef”+1个StringBuiler对象
+	
+	
+	由于JVM编译的时候同样会优化,会创建一个StringBuilder来进行字符串的拼接，实际效果类似：
+	String s = new String("def");
+	new StringBuilder().append("abc").append(s).toString();
+    
+    StringBuilder的toString()方法:
+    @Override
+public String toString() {
+    // Create a copy, don't share the array
+    return new String(value, 0, count);
+}
+会在堆上创建对象,而不是常量池
+
+   
 
    - 常量应该在常量池中创建 
 
@@ -1738,6 +1757,8 @@ Processing elements with an explicit `for-`loop is inherently(本质上) serial
      	static <T> Stream<T> concat(Stream<? extends T> a, Stream<? extends T> b)
      	
      ```
+  ```
+  
   ```
 
 

@@ -507,6 +507,7 @@ rowid 定位记录相对唯一地址值,在该行数据插入到数据库表时�
 
   end; 
 
+注意: ORACLE BEGIN END 关键字表示一个完整的块。而不是类似mysql的事务的含义
 - 调用
 
   - call procedure_name();
@@ -1320,6 +1321,9 @@ Oracle provides the FOR UPDATE NOWAIT clause in SQL syntax to allow the develope
 * for update  行级锁 多表时锁住所有相关行
 * of column 锁住涉及到列所在表的行记录
 * wait n|nowait 等待n sec 或不等待; 若锁冲突,则提示报错,资源正忙
+
+involving GROUP BY, DISTINCT, UNION, INTERSECT, or MINUS. ORA-01786
+也就是只能是普通的select语句
 
 其他session能读吗?
  select userenv('sid') from dual 获取当前session id

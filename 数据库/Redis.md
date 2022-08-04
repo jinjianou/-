@@ -45,11 +45,21 @@ Redis 是一个开源（BSD许可）的，**内存**中的**数据结构存储**
   The empty string is also a valid key ，The maximum allowed key size is 512 MB 
 
   * flushall(clear all db) flushdb(clear current db )
+
   * keys *
+
+    info keyspace 所有db key的数量
+
+    keys *统计的是当前db有效的key，而dbsize统计的是所有未被销毁的key（有效和未被销毁是不一样的，具体可以了解[redis](http://www.itdaan.com/keywords/Redis查询当前库有多少个+key.html)的过期策略）
+
   * exists key
+
   * move key db
+
   * expire key sencond
+
   * ttl key(Time To Live )
+    
     * -1 未设置过期时间 -2已过期 not exists
 
 * Binary-safe strings （this means that you can use any binary sequence ） Map<String,String> 
@@ -120,6 +130,8 @@ Redis 是一个开源（BSD许可）的，**内存**中的**数据结构存储**
 
   或者是zset z代表xyzsets with another dimension 
 
+  Map<String,Set+z> Set<JavaBean>  String element,Double score
+
   * zadd key score member
 
   * zrange key min max [withScores]  从小到大
@@ -146,7 +158,7 @@ Redis 是一个开源（BSD许可）的，**内存**中的**数据结构存储**
 
   * zcount key min max
 
-* Hashes, which are maps composed of fields associated with values. Both the field and the value are strings.  Map<String,Map>  
+* Hashes, which are maps composed of fields associated with values. Both the field and the value are strings.  Map<String,Map<String,String>>
 
   * hset key field value[field value...]
 
@@ -262,6 +274,24 @@ pfmerge destkey sourcekey [sourcekey ...]
   ```
 
   
+
+
+
+## 数据一致性
+
+![ ](.\Redis.assets\image-20220802102551766.png)
+
+　同步异步是针对**调用者**来说的，调用者发起一个请求后，**一直干等**被调用者的反馈就是同步，**不必等去做别的事**就是异步。
+
+　　阻塞非阻塞是针对**被调用者**来说的，被调用者收到一个请求后，**做完**请求任务后才给出反馈就是阻塞，收到请求**直接给出反馈**再去做任务就是非阻塞。
+
+
+
+1. **数据的分布式存储是导致出现一致性的唯一原因**
+
+
+
+
 
 ## 事务
 
@@ -772,6 +802,9 @@ spring data是和spring boot同级的项目，而不是其子项目
 
   only matches when a bean of the specified class is already contained in the BeanFactory and a single candidate can be determined.**本质上等同于Autowired**.the condition match if auto-wiring a bean with the defined type will succeed
 
+  1. beanFactory只有一个类型bean
+  2. 有多个,但指定了primary
+
 - 序列化器
 
   ![2](C:\Users\Administrator\Desktop\复习\素材\pic\redis\2.png)
@@ -805,6 +838,29 @@ spring data是和spring boot同级的项目，而不是其子项目
     ```
 
 
+
+问题: 
+
+1. 自定义@ConditionalOnSingleCandidate(RedisConnectionFactory.class)无效
+
+   spring会先扫描自定义的configurations,而我们未定义RedisConnectionFactory,于是便失效了.
+
+1. 泛型
+
+   ​	容器中有Type<T1>  Type<T2> 两个bean 
+
+   - 自动注入Type失败(这两个都是Type类型) 
+   - 但当指定了泛型后就会精确匹配 如自动注入Type<T1>就会成功
+
+2. 继承关系
+
+   如有A,B extends A类
+
+   当容器中有A,B两个bean 自动注入A类型就会失败
+
+   
+
+   
 
 ## 订阅发布
 
@@ -947,6 +1003,56 @@ spring data是和spring boot同级的项目，而不是其子项目
   缺点： **Redis较难支持在线扩容**（**受到物理内存的限制** ），在集群容量达到上限时在线扩容会变得很复杂。 
 
 
+
+总结:
+
+为了让服务高可用,分布式服务出现
+
+常见的三种集群方案:
+
+1. 主从模式
+
+   缺点: master节点故障后服务，需要人为的手动将slave节点切换成为maser节点后服务才恢复。
+
+   
+
+   ![3686185d629f40dd81019c640ac7d8da](.\Redis.assets\3686185d629f40dd81019c640ac7d8da.png)
+
+2. 哨兵模式
+
+   针对方案1的缺陷,哨兵模式能在master节点故障后能自动将salve节点提升成master节点，不需要人工干预操作就能恢复服务可用
+
+   缺点:主从模式、哨兵模式都没有达到真正的数据sharding存储，**每个redis实例中存储的都是全量数据**
+
+   **不是绝对的实时同步,可能连最终一致性都谈不上**
+
+   - sharding
+
+     **在分布式存储系统中，数据需要分散存储在多台设备上，数据分片（Sharding）就是用来确定数据在多台存储设备上分布的技术。数据分片要达到三个目的：**
+
+     - 分布均匀，即每台设备上的数据量要尽可能相近；
+     - 负载均衡，即每台设备上的请求量要尽可能相近；
+     - 扩缩容时产生的数据迁移尽可能少。
+
+     
+
+   ![4cb99d608cf241c891b6836427935258](.\Redis.assets\4cb99d608cf241c891b6836427935258-1659406617439.png)
+
+3. 分片集群
+
+   1. 集群中有多个master，每个master保存不同数据
+
+   2. 每个master都可以有多个slave节点
+
+   3. master之间通过ping监测彼此健康状态
+
+   4. 客户端请求可以访问集群任意节点，最终都会被转发到正确节点
+
+      
+
+      ![3ff087780483478e91b87ff9ca044ef4](.\Redis.assets\3ff087780483478e91b87ff9ca044ef4-1659406687828.png)
+
+   
 
 ## 缓存穿透与雪崩
 
