@@ -66,13 +66,14 @@ enginx(engine x) 高性能Http和**反向代理web服务器**
 * 在线linux 环境
 
   * shell:  [ Online Bash Compiler - Online Bash Editor - Online Bash IDE - Bash Coding Online - Practice Bash Online - Execute Bash Online - Compile Bash Online - Run Bash Online (tutorialspoint.com)](https://www.tutorialspoint.com/unix_terminal_online.php)
+
 * [JS/UIX - Terminal (masswerk.at)](https://www.masswerk.at/jsuix/index.html) 用户名 guest
 
 * 安装nginx
 
-  wget
+  wget  wgetGNU Wget(常常简称为wget）是一个网络上进行下载的简单而强大的自由软件 
 
-  yum
+  yum  （ Yellow dog Updater, Modified）是一个在 Fedora 和 RedHat 以及 SUSE 中的 Shell 前端软件包管理器。 
 
   1. 装gcc-c++
 
@@ -108,7 +109,7 @@ enginx(engine x) 高性能Http和**反向代理web服务器**
 
   9. 查找安装路径
 
-     whereid nginx
+     whereis nginx
 
   10. 进入其中sbin目录
 
@@ -129,7 +130,7 @@ enginx(engine x) 高性能Http和**反向代理web服务器**
 
 ​	firewall-cmd --list-all
 
-设置开放的端口号
+设置开放的端口号(需重启防火墙)
 
 firewall-cmd --zone=public  --add-port=80/tcp --permanent 
 
@@ -475,7 +476,35 @@ location [ = | ~ | ~* | ^~ ] uri { ... }
 
    path变量中可以包含Nginx服务器预设的大多数变量，只有documentroot和documentroot和realpath_root不可以使用。
 
+   当用户请求 `/` 地址时，Nginx 就会自动在 **[root](http://wiki.nginx.org/HttpCoreModule#root) 配置指令指定的文件系统目录下**依次寻找 `index.htm` 和`index.html` 这两个文件。如果 `index.htm` 文件存在，则直接发起“内部跳转”到 `/index.htm` 这个新的地址；而如果 `index.htm` 文件不存在，则继续检查 `index.html` 是否存在。如果存在，同样发起“内部跳转”到`/index.html`；如果 `index.html` 文件仍然不存在，则放弃处理权给 `content` 阶段的下一个模块 
+
+   默认值 root html
+
+   如location /blog/ 
+
+   {
+
+    root /usr/local/nginx/html; 
+
+   index index.html index.htm; 
+
+   } 
+
+   请求 **http://127.0.0.1:80/blog/root.html** 这个地址时，那么在服务器里面对应的真正的资源是 **/usr/local/nginx/html/blog/root.html**文件。可以发现真实的路径是root指定的值加上location指定的值。 
+
 2. alias
+
+   location /blog/
+
+    {
+
+    alias /usr/local/nginx/html/; 
+
+   index index.html index.htm;
+
+    } 
+
+   同样请求**http://127.0.0.1:80/blog/alias.html**时，在服务器查找的资源路径是：**/usr/local/nginx/html/alias.html。**正如其名，alias指定的路径是location的别名，不管location的值怎么写，资源的真实路径都是alias指定的路径.。 
 
 3. index 相对root而言没有子路径，就会返回的页面即首页
 
@@ -819,4 +848,220 @@ http
 }
 ######Nginx配置文件nginx.conf中文详解#####
 ```
+
+
+
+
+
+# 反向代理
+
+## 案例一
+
+实现效果：  输入www.123.com 跳转到linux tomcat首页
+
+准备：
+
+1. 安装tomcat，使用默认8080端口
+
+   https://mirrors.cnnic.cn/apache/tomcat
+
+   - wget https://mirrors.cnnic.cn/apache/tomcat/tomcat-9/v9.0.65/bin/apache-tomcat-9.0.65.tar.gz
+
+   - 解压
+
+     tar -zxvf  apache-tomcat-9.0.65.tar.gz
+
+   - 配置环境变量
+
+     vim /etc/profile
+
+     export TOMCAT_HOME=/usr/local/tomcat/apache-tomcat-9.0.37  //这里是tomcat 的解压路径
+     export PATH=$PATH: $TOMCAT_HOME/bin
+
+     source /etc/profile
+
+   - 启动
+
+     startup.sh
+
+     shutdown.sh
+
+   - 查看日志
+
+     tail -f logs/catalina.out
+
+2. 配置nginx.conf并重启
+
+   ![1659450480741](assets/1659450480741.png)
+
+
+
+```
+ server {
+        listen       80;
+        server_name  localhost; #这里 192.168.162.100 localhost 127.0.0.1等价
+
+
+        location / {
+            root   html;
+            proxy_pass http://127.0.0.1:8080;
+            index  index.html index.htm;
+        }
+
+```
+
+firewall-cmd --zone=public  --add-port=8080/tcp --permanent 
+firewall-cmd --reload
+
+## 案例二
+
+
+
+根据访问的路径跳转到不同端口的服务中
+如
+
+192.168.162.100:9001/edu/     ->  127.0.0.1:8080
+192.168.162.100:9001/vod/     ->   127.0.0.1:8081
+
+
+
+新增一个server
+
+```
+    server {
+        listen       9001;
+        server_name  localhost;
+
+        location ~* ^/edu {
+            proxy_pass http://127.0.0.1:8080;
+        }
+
+        location ~* ^/vod {
+            proxy_pass http://127.0.0.1:8081;
+        }
+
+    }
+```
+
+
+通过上述配置后访问 http://192.168.162.100:9001/edu/index.html
+
+相当于直接访问 http://192.168.162.100:8080/edu/index.html
+
+# 负载均衡
+
+增加服务器的数量，将原来请求集中到单个服务器上，改为将负载分发到不同的服务器上
+
+## 案例一
+
+请求192.168.162.100/edu/a.html,负载均衡效果，平均分配到8081和8082端口应用中
+
+
+
+核心： http块中的upstream
+
+```
+http:{
+    ...
+    upstream myServer{
+        server 192.168.162.100:8080 weight=1;
+        server 192.168.162.100:8081 weight=1;
+    }
+}
+
+server{
+	...
+    location / {
+        ...
+        proxy_pass http://myServer;
+        proxy_connect_timeout 10;
+    }
+}
+```
+
+
+
+## nginx分配策略
+
+1. 轮询（默认）
+
+   每个请求按时间顺序逐一分配到后端服务器中，若服务器down掉，则自动剔除
+
+2. weight（权重） 
+
+   为指定的服务器设置权重参数，权重占比为[负载均衡](https://so.csdn.net/so/search?q=%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1&spm=1001.2101.3001.7020)决定的一部分。权重越大被分配到负载的概率就大。
+
+   用于服务器性能不均的情况 
+
+   weight=x
+
+3. ip_hash
+
+   每个请求按照访问ip的hash结果分配，这样使得每个访客固定访问某个服务器，可以解决session的问题
+
+       upstream myServer{
+       	ip_hash;
+           server 192.168.162.100:8080 weight=1;
+           server 192.168.162.100:8081 weight=1;
+           ...
+       }
+
+4. fair(第三方)
+
+   根据服务器的响应时间分配请求，响应时间越短的优先分配
+
+   
+
+   安装fair
+
+   1. 下载ziphttps://github.com/gnosek/nginx-upstream-fair
+
+   2. 解压unzip
+
+   3. 切换到下载的nginx解压目录下
+
+   4. ```
+      ./configure  --add-module=/opt/nginx-upstream-fair-master
+      ```
+
+      6.  编译make
+      7. 复制文件 cp objs/nginx /usr/local/nginx/sbin/nginx 
+      8. 验证 ./nginx -V
+
+   
+
+   问题：编译时nginx-upstream-fair/ngx_http_upstream_fair_module.c:543:28: error: ‘ngx_http_upstream_srv_conf_t’ has no member named ‘default_port’ if (us->port == 0 && us->default_port == 0)  
+
+   解决：/src/http/ngx_http_upstream.h   ngx_http_upstream_srv_conf_s模块  新增in_port_t  default_port ;
+
+   
+
+   
+
+   
+
+   upstream myServer{
+   	fair;
+       server 192.168.162.100:8080 weight=1;
+       server 192.168.162.100:8081 weight=1;
+       ...
+   }
+
+5. least_conn（最少连接数） 
+
+   在一些要求需要更长的时间才能完成的应用情况下， 最少连接可以更公平地控制应用程序实例的负载。使用最少连接负载均衡，[nginx](https://so.csdn.net/so/search?q=nginx&spm=1001.2101.3001.7020)不会向负载繁忙的服务器上分发请求，而是**将请求分发到负载低的服务器上** 
+
+6. url_hash（第三方） 
+
+   按访问url的hash结果来分配请求，使同一个url定向到同一个后端服务器，**后端服务器为缓存时比较有效** 
+
+   upstream myServer{
+       hash $request_uri;
+       server 192.168.162.100:8080 weight=1;
+       server 192.168.162.100:8081 weight=1;
+       ...
+
+   }
+
+# 动静分离
 
