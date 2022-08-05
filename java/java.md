@@ -736,7 +736,7 @@ public class Math {
 	由于JVM编译的时候同样会优化,会创建一个StringBuilder来进行字符串的拼接，实际效果类似：
 	String s = new String("def");
 	new StringBuilder().append("abc").append(s).toString();
-    
+   
     StringBuilder的toString()方法:
     @Override
 public String toString() {
@@ -1609,6 +1609,11 @@ class FilterChain{
 # JDK8新特性
 
 * 函数式编程 lambda  默认方法/静态方法  方法引用
+  问题: lambda或匿名函数为什么要求外部变量为final
+  因为在java设计之初为了保护数据的一致性而规定的,对引用变量来说是引用地址的一致性，对基本类型来说就是值的一致性。
+  1. 在编译期以强制手段确保用户不会在 lambda 表达式中做修改原变量值的操作
+  2.  lambda 表达式的支持是拥抱函数式编程，而函数式编程本身不应为函数引入状态的
+  解决:可以通过定义一个相同类型的变量b，然后将该外部变量赋值给b，匿名内部类引用b就行了
   * 方法引用 
     * 静态方法 Class::staticMethodName
     * 特定对象的实例方法 obj::instanceMethodName

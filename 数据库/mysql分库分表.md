@@ -91,3 +91,113 @@
 1. 分布式事务
 2. 跨库join
 3. 分布式全局唯一id
+
+
+
+
+
+# 批量导入导出
+
+通过JDBC执行[sql语句](https://so.csdn.net/so/search?q=sql语句&spm=1001.2101.3001.7020)时，**update和delete执行sql的语句是一条一条发往数据库执行**
+
+但是！**数据库的处理速度是很快，单次吞吐量是很大，执行效率极高**
+
+**addBatch()是把若干sql语句装载到一起，然后一次性传送到数据库执行，即是批量处理sql数据的**。
+
+## 批量插入
+
+方式一: 统一插   >30min
+
+```
+Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/pagehelper?characterEncoding=UTF-8&useUnicode=true&useSSL=false&serverTimezone=UTC"
+,"root","123456");
+PreparedStatement statement = conn.prepareStatement("insert into t_vue(title) values(?)");
+long start = System.currentTimeMillis();
+for (int i = 0; i < 50000; i++) {
+    statement.setString(1,String.valueOf(i));
+    statement.addBatch();
+}
+System.out.println(System.currentTimeMillis()-start);
+statement.executeBatch();
+System.out.println(System.currentTimeMillis()-start);
+```
+
+方式二: 拆分插  >30min
+
+```
+for (int j = 0; j < 50; j++) {
+    for (int i = 0; i < 1000; i++) {
+        statement.setString(1,String.valueOf(j*1000+i));
+        statement.addBatch();
+    }
+    statement.executeBatch();
+}
+```
+
+发现并没有明显的提升,经过分析
+
+1. addBatch后并没有清空导致内存中数据不断增加 statement.clear();
+
+   源码分析
+
+   ```
+   this.batchedArgs.add(batch);//batch:ClientPreparedQueryBindings   batchedArgs List
+   
+   
+   ```
+
+   
+
+2. executeBatch
+
+   ```
+      if (!this.batchHasPlainStatements && (Boolean)this.rewriteBatchedStatements.getValue()) {
+                           if (this.getParseInfo().canRewriteAsMultiValueInsertAtSqlLevel()) {
+                               var3 = this.executeBatchedInserts(batchTimeout);
+                               return var3;
+                           }
+   
+                           if (!this.batchHasPlainStatements && this.query.getBatchedArgs() != null && this.query.getBatchedArgs().size() > 3) {
+                               var3 = this.executePreparedBatchAsMultiStatement(batchTimeout);
+                               return var3;
+                           }
+                       }
+   
+                       var3 = this.executeBatchSerially(batchTimeout);
+                       return var3;
+   ```
+
+   分为以下三种情况
+
+   1. !this.batchHasPlainStatements && (Boolean)this.rewriteBatchedStatements.getValue() 
+      - canRewriteAsMultiValueInsertAtSqlLevel -> executeBatchedInserts
+      - !canRewriteAsMultiValueInsertAtSqlLevel&&!this.batchHasPlainStatements && this.query.getBatchedArgs() != null && this.query.getBatchedArgs().size() > 3  ->  executePreparedBatchAsMultiStatement
+
+   b. else 
+
+   ​		executeBatchSerially
+
+   由此可知,没有rewriteBatchedStatements相当于走单行串行插入,效率极低
+
+   **url 添加&rewriteBatchedStatements=true**
+
+   走executeBatchedInserts
+
+   Rewrites the already prepared statement into  multi-value insert statement of 'statementsPerBatch'
+
+    就是拼装成insert into xxx(xxx) values(xxx),(xxx)....
+
+   ```
+   for (int j = 0; j < 50; j++) {
+       for (int i = 0; i < 1000; i++) {
+           statement.setString(1,String.valueOf(j*1000+i));
+           statement.addBatch();
+       }
+       statement.executeBatch();
+       statement.clearBatch();
+   }
+   ```
+
+   47s
+
+   不拆分依旧>30min
