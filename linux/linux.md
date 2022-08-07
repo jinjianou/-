@@ -195,9 +195,11 @@ SSH 和 Telnet 应用领域基本重合  SSH 比 Telnet 更加安全
 
   1. ssh-keygen -t rsa -C "your_email@example.com" 
 
+     ssh-keygen -t rsa -C "jinjianou@163.com" 
+
      默认存放在~/.ssh/下   id_rsa
 
-  2. **输入passphrase（本步骤可以跳过）** 
+  2. **输入passphrase（口令，本步骤可以跳过）** 
 
   3. 将生成的公钥放在需要的地方
 
@@ -1011,7 +1013,7 @@ grep print lines matching a pattern
 
   * 修改环境变量并生效
 
-    vim /etc/prifile
+    vim /etc/profile
 
     export JAVA_HOME=/usr/java/jdk1.8.0_261-amd64
 
@@ -1725,6 +1727,44 @@ awk [options][BEGIN] [[condition]{program}][END]{file}
     awk 'END{print  NF}' num
 
 * 
+
+
+
+## WC
+
+wc - print newline, word, and byte counts for each file
+
+统计文件字节、字符、单词与行的数量
+
+wc [OPTION]... [FILE]...
+wc [OPTION]... --files0-from=F
+
+### 参数
+
+-c, --bytes
+	仅显示字节数
+-m, --chars
+	仅显示字符数
+-l, --lines
+	仅显示行数
+--files0-from=F
+	从文件 F 中获取以 NULL 字符结尾的文件名作为输入，如果 F 等于连字符 -，则从标准输入读取
+-L, --max-line-length
+	显示文件中最长行的字符数
+-w, --words
+	显示单词数，单词以空格分隔
+--help
+	显示帮助信息并退出
+--version
+	显示版本信息并退出
+
+### 例子
+
+- wc /etc/passwd 
+
+  43   52 1872 /etc/passwd   行数、单词数、字符数
+
+- wc -l /etc/passwd  统计行数
 
 
 

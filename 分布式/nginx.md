@@ -1063,5 +1063,800 @@ server{
 
    }
 
+
+
+
+
+# Http Status 304
+
+如果客户端（浏览器）发送的是一个条件验证请求,则web服务器可能会返回304响应,这就表明了**客户端中所请求资源的缓存仍然是有效的,也就是说该资源从上次缓存到现在没有被修改过，浏览器会自动识别并读取缓存中的文件来显示**。 如果客户端（浏览器）发送的是一个条件验证请求,则web服务器可能会返回304响应,这就表明了客户端中所请求资源的缓存仍然是有效的,也就是说该资源从上次缓存到现在没有被修改过，浏览器会自动识别并读取缓存中的文件来显示。 **304服务器不会返回网页内容**
+
+在进行条件请求时，一般请求头会带上 If-Modified-Since、 If-None-Match，这两个值分别对应响应头 Last-Modified、 ETag 返回的值 
+
+只有在客户端缓存了对应资源且该资源的响应头中包含了Last-Modified或ETag的情况下,才可能发送条件请求.如果这两个头都不存在,则必须无条件请求该资源,服务器也就必须返回完整的资源数据. 
+
+返回200的情况
+
+1. 资源非最新
+2. 服务器认为**客户端资源过期**，服务器就会返回200 OK响应,响应体就是该资源当前最新的内容.**客户端收到200响应后,就会用新的资源覆盖掉旧的缓存资源** 
+
+
+
+## 判断缓存过期
+
+**必须是条件验证请求，否则服务器也就会返回完整的资源数据**
+
+设定请求头中的某一个字段来实现的：1、Expires；2、Cache-Control。Cache-Control设置后优先级比Expires高 
+
+1. Cache-Control
+
+   Cache-Control：max-age =86400   (TimeUnit second)
+
+   **当未过期时，不会向服务器发起资源请求，适合不经常变动的资源。**
+
+   **但是会去获取服务器该资源的最后更新时间或ETag,以此决定是200抓取资源还是304**
+
+   
+
+   **直接刷新资源的时候就会让当前的这个文件所设定的过期时间失效**
+
+   
+
+   Last-Modified :
+
+   当第一次请求某一个文件的时候，就会传递回来一个Last-Modified 字段，其内容是这个文件的修改时间。当这个文件缓存过期(失效)，浏览器又向服务器请求这个文件的时候，会自动带一个请求头字段If-Modified-Since，其值是上一次传递过来的Last-Modified的值，拿这个值去和服务器中现在这个文件的最后修改时间做对比，如果If-Modified-Since>=Last-Modified，那么就不会重新拉取这个文件了，返回304让浏览器读过期缓存。否则就重新拉取。此时不会再返回Last-Modified
+
+2. expire
+
+   指定过期时间
+
+   
+
+## ETag
+
+Entity Tag
+
+在HTTP1.1协议中其实就是请求HEAD中的一个属性,用来帮助服务器控制Web端的缓存验证 
+
+原理 :
+
+当浏览器第一次请求服务器的某项资源(A)时, 服务器根据A算出一个哈希值(3f80f-1b6-3e1cb03b)并通过 ETag 返回给浏览器，浏览器把"3f80f-1b6-3e1cb03b" 和 A 同时缓存在本地，当下次再次向服务器请求A时，会通过类似 If-None-Match: “3f80f-1b6-3e1cb03b” 的请求头把ETag发送给服务器，服务器再次计算A的哈希值并和浏览器返回的值做比较，如果发现A发生了变化就把A返回给浏览器(200)，如果发现A没有变化就给浏览器返回一个304未修改。
+
+好处：节省服务器的带宽 ，不需要每次都把全量数据返回给客户 
+
+缺点：严重浪费服务器端资源 ，很多网站默认是禁用ETag的  ->把ETag退化，比如通过资源的版本或者修改时间来生成ETag。 
+
+此时效果和HTTP协议里面的另外一个控制属性(Last-Modified)就雷同 ,使用 Last-Modified 的问题在于它的精度在秒(s)的级别，比较适合不太敏感的静态资源。 
+
 # 动静分离
 
+将动态请求和静态请求分开（非页面的物理分离），nginx使用处理静态页面（可以转发到静态资源服务器），Tomcat处理动态页面
+
+实现：
+
+1. 把静态资源放在独立的服务器上，主流的嘴阀
+
+2. 动静文件混合在一起发布，通过nginx分开
+
+   
+
+root等设置静态资源路径
+
+proxy_pass等设置后台服务器地址
+
+
+
+```
+ location /todolist {
+         root  /vue_data/;
+         autoindex on;
+         autoindex_localtime on;
+        }
+
+```
+
+注意 : location /todolist 没有tail /   当加了之后，只能匹配/todolist/ 而不能匹配/todolist；反之，能两者兼容
+
+## autoindex
+
+[Nginx](https://so.csdn.net/so/search?q=Nginx&spm=1001.2101.3001.7020)默认是不允许列出整个目录的。如需此功能，打开nginx.conf文件或你要启用目录浏览虚拟主机的配置文件，在server或location 段里添加上autoindex on;来启用目录流量，下面会分情况进行说明。
+
+另外Nginx的目录流量有两个比较有用的参数，可以根据自己的需求添加：
+
+| 配置                 | 说明                                                         |
+| -------------------- | ------------------------------------------------------------ |
+| autoindex_exact_size | 默认为 **on**，显示出文件的确切大小，单位是bytes。 改为 off 后，显示出文件的大概大小，单位是kB或者MB或者GB |
+| autoindex_localtime  | 默认为off，显示的文件时间为GMT时间。 改为on后，显示的文件时间为文件的服务器时间 |
+
+![1659746072497](assets/1659746072497.png)
+
+
+
+# 高可用的集群
+
+  ![1659752657759](assets/1659752657759.png)
+
+注意点： 两台机器都要安装nginx和keepalived
+
+ **Keepalived是Linux下一个轻量级别的高可用解决方案。** **作用是检测服务器的状态并切换** 
+
+0. ssh登录免密码  ssh-copy-id 192.168.162.101
+   1. 如果还需要密码 etc/ssh/sshd_config  RSAAuthentication
+   2. Agent admitted failure to sign using the key  ssh-add ~/.ssh/id-rsa
+
+1. scp /opt/nginx-1.22.0.tar.gz root@192.168.162.101:/opt/
+
+2. 安装nginx
+
+3. 安装keepalived
+
+   yum install -y keepalived
+
+   1. The GPG keys listed for the "MySQL 8.0 Community Server" repository are already installed but they are not correct for this packa
+      ge.Check that the correct key URLs are configured for this repository
+
+      解决：rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2022  && yum update
+
+4. 日志文件在 /etc/keepalived
+
+5. 启动nginx和keepalived
+
+   **systemctl start keepalived**
+
+   
+
+## 案例
+
+1. 192.168.162.50是否能访问
+
+   能访问，并且访问的是master(master已经绑定到了这个虚拟主机)
+
+   ![1659775175719](assets/1659775175719.png)
+
+2. master 192.168.162.100 nginx宕机了，是否能保证高可用
+
+   当nginx宕机了 ，nginx_check.sh脚本会先重启，如果重启失败，停掉keepalived
+
+   问题：脚本并没有被自动执行
+
+   解决：tail -f /var/log/messages 通过分析
+
+   ​	   在/etc/hosts配置LVS_DEVEL服务器名称的映射ip
+
+   
+
+​     问题：**主备数据同步的问题**
+
+
+
+
+
+## Keepalived配置文件
+
+1、全局配置
+
+2、VRRP配置
+
+虚拟路由冗余协议VRRP（Virtual Router Redundancy Protocol）是一种用于提高网络可靠性的容错协议。通过VRRP，可以在主机的下一跳设备出现故障时，及时将业务切换到备份设备，从而保障网络通信的连续性和可靠性。 
+
+3、LVS配置
+
+ LVS（Linux Virtual Server）即Linux虚拟服务器，是由章文嵩博士主导的开源负载均衡项目，目前LVS已经被集成到Linux内核模块中。该项目在Linux内核中实现了基于IP的数据请求负载均衡调度方案，终端互联网用户从外部访问公司的外部负载均衡服务器，终端用户的Web请求会发送给LVS调度器，调度器根据自己预设的算法决定将该请求发送给后端的某台Web服务器
+
+
+
+
+
+ARP 地址解析协议（Address Resolution Protocol），其基本功能为透过目标设备的IP地址，查询目标设备的MAC地址，以保证通信的顺利进行。 
+
+
+
+
+
+
+```
+#-------------------------全局配置 Start----------------------------------------
+#可以在这里实现邮件发送的功能，但是比较鸡肋。通常在vrrp中实现
+global_defs {
+   notification_email {
+     acassen@firewall.loc
+   }
+   notification_email_from Alexandre.Cassen@firewall.loc
+   smtp_server 192.168.200.1
+   smtp_connect_timeout 30
+   router_id LVS_DEVEL  #是运行keepalived的一个表示，多个集群设置会不同
+   vrrp_skip_check_adv_addr
+   vrrp_strict
+   vrrp_garp_interval 0
+   vrrp_gna_interval 0
+}
+#-------------------------全局配置 End----------------------------------------
+#-------------------------高可用VRRP Start------------------------------------
+ 
+vrrp_script chk_nginx {    #外部脚本，默认的配置文件没有这个,一般放在vrrp_instance上面
+    script "/usr/local/script/nginx_check.sh" #脚本存放的地址
+    interval 2    #调用间隔时间，每2秒一次
+    weight -2
+}
+ 
+vrrp_instance VI_1 {
+    state MASTER    #标识节点角色（MASTER：主节点；BACKUP：备节点），一定要大写
+    interface eth0  #需要监控的网卡，使用ip addr查看。一般为ens33
+    virtual_router_id 51 #虚拟路由ID,主备必须相同，表示在同一个虚拟路由器里面
+    priority 100    #节点的优先级，备节点一般比主节点低
+    advert_int 1    #检查间隔时间，这里每隔1秒检查一次
+    nopreempt   #设为非抢占模式，主机恢复之后不会自动切回来，主备的state都应该设置为BACKUP。
+    authentication {
+        auth_type PASS    #认证类型，主备必须保持一致
+        auth_pass 1111    #认证密码，主备必须保持一致
+    }
+    virtual_ipaddress {
+        192.168.200.16/24    #虚拟IP，VIP；“/24”指24为子网掩码
+    }
+    track_script{    #调用脚本，默认的配置文件没有这个
+        chk_nginx
+    }
+}
+#-------------------------高可用VRRP End------------------------------------
+#-------------------------负载均衡LVS Start---------------------------------
+virtual_server 192.168.200.100 443 {
+    delay_loop 6    #健康检查时间间隔
+    lb_algo rr    #负载均衡调度算法
+    lb_kind NAT    #负载均衡转发规则 
+    persistence_timeout 50
+    protocol TCP    #协议
+ 
+    real_server 192.168.201.100 443 { #要监控的real_server的ip和端口号
+        weight 1    #权重
+        SSL_GET {
+            url {
+              path /
+              digest ff20ad2481f97b1754ef3e12ecd3a9cc
+            }
+            url {
+              path /mrtg/
+              digest 9b3a0c85a887a256d6939da88aabd8cd
+            }
+            connect_timeout 3
+            nb_get_retry 3
+            delay_before_retry 3
+        }
+    }
+}
+ 
+virtual_server 10.10.10.2 1358 {
+    delay_loop 6
+    lb_algo rr 
+    lb_kind NAT
+    persistence_timeout 50
+    protocol TCP
+ 
+    sorry_server 192.168.200.200 1358
+ 
+    real_server 192.168.200.2 1358 {
+        weight 1
+        HTTP_GET {
+            url { 
+              path /testurl/test.jsp
+              digest 640205b7b0fc66c1ea91c463fac6334d
+            }
+            url { 
+              path /testurl2/test.jsp
+              digest 640205b7b0fc66c1ea91c463fac6334d
+            }
+            url { 
+              path /testurl3/test.jsp
+              digest 640205b7b0fc66c1ea91c463fac6334d
+            }
+            connect_timeout 3
+            nb_get_retry 3
+            delay_before_retry 3
+        }
+    }
+ 
+    real_server 192.168.200.3 1358 {
+        weight 1
+        HTTP_GET {
+            url { 
+              path /testurl/test.jsp
+              digest 640205b7b0fc66c1ea91c463fac6334c
+            }
+            url { 
+              path /testurl2/test.jsp
+              digest 640205b7b0fc66c1ea91c463fac6334c
+            }
+            connect_timeout 3
+            nb_get_retry 3
+            delay_before_retry 3
+        }
+    }
+}
+ 
+virtual_server 10.10.10.3 1358 {
+    delay_loop 3
+    lb_algo rr 
+    lb_kind NAT
+    persistence_timeout 50
+    protocol TCP
+ 
+    real_server 192.168.200.4 1358 {
+        weight 1
+        HTTP_GET {
+            url { 
+              path /testurl/test.jsp
+              digest 640205b7b0fc66c1ea91c463fac6334d
+            }
+            url { 
+              path /testurl2/test.jsp
+              digest 640205b7b0fc66c1ea91c463fac6334d
+            }
+            url { 
+              path /testurl3/test.jsp
+              digest 640205b7b0fc66c1ea91c463fac6334d
+            }
+            connect_timeout 3
+            nb_get_retry 3
+            delay_before_retry 3
+        }
+    }
+ 
+    real_server 192.168.200.5 1358 {
+        weight 1
+        HTTP_GET {
+            url { 
+              path /testurl/test.jsp
+              digest 640205b7b0fc66c1ea91c463fac6334d
+            }
+            url { 
+              path /testurl2/test.jsp
+              digest 640205b7b0fc66c1ea91c463fac6334d
+            }
+            url { 
+              path /testurl3/test.jsp
+              digest 640205b7b0fc66c1ea91c463fac6334d
+            }
+            connect_timeout 3
+            nb_get_retry 3
+            delay_before_retry 3
+        }
+    }
+}
+ 
+#-------------------------负载均衡LVS End---------------------------------
+```
+
+### 简单配置实例
+
+```
+global_defs {
+   router_id LVS_DEVEL #路由主机
+}
+
+
+
+vrrp_script chk_nginx {    #外部脚本，默认的配置文件没有这个,一般放在vrrp_instance上面
+    script "/usr/local/script/nginx_check.sh" #脚本存放的地址
+    interval 2    #调用间隔时间，每2秒一次
+    weight -2
+}
+ 
+vrrp_instance VI_1 {
+    state MASTER    #标识节点角色（MASTER：主节点；BACKUP：备节点），一定要大写
+    interface ens33  #需要监控的网卡，使用ip addr查看。一般为ens33
+    virtual_router_id 51 #虚拟路由ID,主备必须相同，表示在同一个虚拟路由器里面
+    priority 100    #节点的优先级，备节点一般比主节点低
+    advert_int 1    #检查间隔时间，这里每隔1秒检查一次
+    nopreempt   #设为非抢占模式，主机恢复之后不会自动切回来，主备的state都应该设置为BACKUP。
+    authentication {
+        auth_type PASS    #认证类型，主备必须保持一致
+        auth_pass 1111    #认证密码，主备必须保持一致
+    }
+    virtual_ipaddress {
+        192.168.162.50/24    #虚拟IP，VIP；“/24”指24为子网掩码
+    }
+    track_script {    #调用脚本，默认的配置文件没有这个
+        chk_nginx
+    }
+}
+```
+
+vrrp_script.weight:
+
+keepalived会**定时执行脚本**并**对脚本执行的结果进行分析**，动态调整vrrp_instance的优先级。
+
+如果脚本执行结果**为0**，并且**weight**配置的值**大于0**，则优先级相应的**增加**
+
+如果脚本执行结果**非0**，并且**weight**配置的值**小于0**，则优先级相应的**减少**
+
+**其他情况，维持原本配置的优先级**，即配置文件中priority对应的值。
+
+这里需要注意的是：
+
+1） 优先级不会不断的提高或者降低
+
+2） **可以编写多个检测脚**本并为每个检测脚本设置**不同的weight**
+
+3） 不管提高优先级还是降低优先级，最终优先级的**范围是在[1,254]**，不会出现优先级小于等于0或者优先级大于等于255的情况
+
+这样可以做到利用脚本检测业务进程的状态，并动态调整优先级从而实现主备切换。
+
+
+
+nginx_check.sh 脚本
+
+```
+#!/bin/bash
+res=`ps -C nginx --no-header | wc -l`
+if [ $res -eq 0 ];then
+        /usr/local/nginx/sbin/nginx
+        sleep 2
+        if [ `ps -C nginx --no-header | wc -l` -eq 0 ];then
+                killall keepalived
+        fi
+fi
+
+```
+
+```
+  killall [选项]  name
+```
+
+   killall: command not found
+
+​	 yum -y  install psmisc 
+
+
+
+
+
+
+
+# 原理
+
+## 文件描述符
+
+**Linux一切皆文件**
+
+文件描述符：简称fd，当应用程序请求内核打开/新建一个文件时，内核会返回一个文件描述符用于对应这个打开/新建的文件，其fd本质上就是一个非负整数，读写文件也是需要使用这个文件描述符来指定待读写的文件的 
+
+###内核
+
+操作系统的核心叫内核，是一个独立的软件  
+
+操作系统为每一个进程维护了一个文件描述符表，该表的索引值都从从0开始的，所以在不同的进程中可以看到相同的文件描述符，这种情况下相同的文件描述符可能指向同一个文件，也可能指向不同的文件，
+
+![img](assets/5362354-dd7d2767fb6de9bb.webp) 
+
+
+
+
+
+#### node
+
+inode是 UNIX 操作系统中的一种数据结构，其本质是结构体，它包含了与文件系统中各个文件相关的一些重要信息。 简单来说，就是存储文件的元数据信息，也就索引节点
+
+硬盘的最小存储单位叫做”扇区”  512字节
+
+文件存取的最小单位叫做块    4K
+
+stat file 就可以查看inode
+
+操作系统自动将硬盘分成两个区域。一个是数据区，存放文件数据；另一个是inode区（inode table），存放inode所包含的信息 
+
+Unix/Linux系统内部不使用文件名，而使用inode号码来识别文件;文件名只是inode的别名
+
+
+
+当一个应用程序刚刚启动的时候，0是标准输入，1是标准输出，2是标准错误。如果此时去打开一个新的文件，它的文件描述符会是3。POSIX标准要求每次打开文件时（含socket）必须使用当前进程中最小可用的文件描述符号
+
+ **表面上，用户通过文件名，打开文件。实际上，系统内部这个过程分成三步：首先，系统找到这个文件名对应的inode号码；其次，通过inode号码，获取inode信息；最后，根据inode信息，找到文件数据所在的block，读出数据。** 
+
+
+
+### fd补充
+
+1. 限制
+
+   文件描述符是一个重要的系统资源，理论上系统内存多大就应该可以打开多少个文件描述符，但是实际情况是，内核会有系统级限制，以及用户级限制（不让某一个应用程序进程消耗掉所有的文件资源，可以使用ulimit -n 查看，系统限制用户层面，文件描述符表数量=最大进程数）
+
+2. 文件描述符唯一性  进程 + 文件描述符ID 
+
+3. 进程结构图：
+
+![img](assets/5362354-10b4a55b74b04160.webp) 
+
+ 
+
+ 
+
+ 
+
+
+
+## IO多路复用
+
+### 是什么
+
+**单线程/单进程同时监测若干个文件描述符是否可以执行IO操作的能力** . 在nginx中就是master监测多个woker进程的fd是否可以执行io
+
+### 解决什么问题
+
+#### 说在前头
+
+应用程序通常需要处理来自多条事件流中的事件，比如我现在用的电脑，需要同时处理键盘鼠标的输入、中断信号等等事件，再比如web服务器如nginx，需要同时处理来来自N个客户端的事件。
+
+> 逻辑控制流在时间上的重叠叫做 **并发**(单个cpu)
+
+而CPU单核在同一时刻只能做一件事情，一种解决办法是对CPU进行**时分复用**(多个事件流将CPU切割成多个时间片，不同事件流的时间片交替进行)。在计算机系统中，我们用线程或者进程来表示一条执行流，通过不同的线程或进程在操作系统内部的调度，来做到对CPU处理的时分复用。这样多个事件流就可以并发进行，不需要一个等待另一个太久，在用户看起来他们似乎就是并行在做一样。
+
+但凡事都是有成本的。线程/进程也一样，有这么几个方面：
+
+1. 线程/进程创建成本
+2. CPU切换不同线程/进程成本 [Context Switch](https://link.zhihu.com/?target=https%3A//en.wikipedia.org/wiki/Context_switch)
+3. 多线程的资源竞争
+
+有没有一种可以在单线程/进程中处理多个事件流的方法呢？一种答案就是IO多路复用。
+
+因此IO多路复用解决的本质问题是在**用更少的资源完成更多的事**。
+
+为了更全面的理解，先介绍下在Linux系统下所有IO模型。
+
+#### I/O模型
+
+目前Linux系统中提供了5种IO处理模型
+
+1. 阻塞IO
+2. 非阻塞IO
+3. IO多路复用
+4. 信号驱动IO
+5. 异步IO
+
+
+
+
+
+
+
+- 阻塞IO
+
+这是最常用的简单的IO模型。阻塞IO意味着当我们发起一次IO操作后一直等待成功或失败之后才返回，在这期间程序不能做其它的事情。阻塞IO操作只能对单个文件描述符进行操作，详见[read](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man2/read.2.html)或[write](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man2/write.2.html)。
+
+
+
+- 非阻塞IO
+
+我们在发起IO时，通过对文件描述符设置O_NONBLOCK flag来指定该文件描述符的IO操作为非阻塞。非阻塞IO通常发生在一个for循环当中，因为每次进行IO操作时要么IO操作成功，要么当IO操作会阻塞时返回错误EWOULDBLOCK/EAGAIN，然后再根据需要进行下一次的for循环操作，这种类似轮询的方式会浪费很多不必要的CPU资源，是一种糟糕的设计。和阻塞IO一样，非阻塞IO也是通过调用[read](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man2/read.2.html)或write[write](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man2/write.2.html)来进行操作的，也只能对单个描述符进行操作。
+
+
+
+- IO多路复用
+
+IO多路复用在Linux下包括了三种，[select](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man2/select.2.html)、[poll](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man2/poll.2.html)、[epoll](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man7/epoll.7.html)，抽象来看，他们功能是类似的，但具体细节各有不同：**首先都会对一组文件描述符进行相关事件的注册，然后阻塞等待某些事件的发生或等待超时**。更多细节详见下面的 "具体怎么用"。IO多路复用都可以关注多个文件描述符，但对于这三种机制而言，不同数量级文件描述符对性能的影响是不同的，下面会详细介绍。
+
+
+
+- 信号驱动IO
+
+[信号驱动IO](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man7/signal.7.html)是利用信号机制，让内核告知应用程序文件描述符的相关事件。这里有一个信号驱动IO相关的[例子](https://link.zhihu.com/?target=https%3A//github.com/troydhanson/network/blob/master/tcp/server/sigio-server.c)。
+
+但信号驱动IO在网络编程的时候通常很少用到，因为在网络环境中，和socket相关的读写事件太多了，比如下面的事件都会导致SIGIO信号的产生：
+
+1. TCP连接建立
+2. 一方断开TCP连接请求
+3. 断开TCP连接请求完成
+4. TCP连接半关闭
+5. 数据到达TCP socket
+6. 数据已经发送出去(如：写buffer有空余空间)
+
+上面所有的这些都会产生SIGIO信号，但我们没办法在SIGIO对应的信号处理函数中区分上述不同的事件，SIGIO只应该在IO事件单一情况下使用，比如说用来监听端口的socket，因为只有客户端发起新连接的时候才会产生SIGIO信号。
+
+
+
+- 异步IO
+
+异步IO和信号驱动IO差不多，但它比信号驱动IO可以多做一步：相比信号驱动IO需要在程序中完成数据从用户态到内核态(或反方向)的拷贝，异步IO可以把拷贝这一步也帮我们完成之后才通知应用程序。我们使用 [aio_read](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man3/aio_read.3.html) 来读，[aio_write](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man3/aio_write.3.html) 写。
+
+> 同步IO vs 异步IO 1. 同步IO指的是程序会一直阻塞到IO操作如read、write完成 2. 异步IO指的是IO操作不会阻塞当前程序的继续执行
+> 所以根据这个定义，上面阻塞IO当然算是同步的IO，非阻塞IO也是同步IO，因为当文件操作符可用时我们还是需要阻塞的读或写，同理IO多路复用和信号驱动IO也是同步IO，只有异步IO是完全完成了数据的拷贝之后才通知程序进行处理，没有阻塞的数据读写过程。
+
+### 目前有哪些IO多路复用的方案
+
+解决方案总览
+
+Linux: select、poll、epoll
+
+MacOS/FreeBSD: kqueue
+
+Windows/Solaris: [IOCP](https://link.zhihu.com/?target=https%3A//en.wikipedia.org/wiki/Input/output_completion_port)
+
+
+
+### 常见软件的IO多路复用方案
+
+redis: Linux下 epoll(level-triggered)，没有epoll用select
+
+nginx: Linux下 epoll(edge-triggered)，没有epoll用select
+
+###  具体怎么用
+
+我在工作中接触的都是Linux系统的服务器，所以在这里只介绍Linux系统的解决方案
+
+#### select
+
+相关函数定义如下
+
+```
+/* According to POSIX.1-2001, POSIX.1-2008 */
+    #include <sys/select.h>
+
+    /* According to earlier standards */
+    #include <sys/time.h>
+    #include <sys/types.h>
+    #include <unistd.h>
+
+    int select(int nfds, fd_set *readfds, fd_set *writefds,
+                fd_set *exceptfds, struct timeval *timeout);
+
+    int pselect(int nfds, fd_set *readfds, fd_set *writefds,
+                fd_set *exceptfds, const struct timespec *timeout,
+                const sigset_t *sigmask);
+
+    void FD_CLR(int fd, fd_set *set);
+    int  FD_ISSET(int fd, fd_set *set);
+    void FD_SET(int fd, fd_set *set);
+    void FD_ZERO(fd_set *set);
+```
+
+**select的调用会阻塞到有文件描述符可以进行IO操作或被信号打断或者超时才会返回**。
+
+select将监听的文件描述符分为三组，每一组监听不同的需要进行的IO操作。readfds是需要进行读操作的文件描述符，writefds是需要进行写操作的文件描述符，exceptfds是需要进行[异常事件](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man2/poll.2.html)处理的文件描述符。这三个参数可以用NULL来表示对应的事件不需要监听。
+
+当select返回时，每组文件描述符会被select过滤，只留下可以进行对应IO操作的文件描述符。
+
+FD_xx系列的函数是用来操作文件描述符组和文件描述符的关系。
+
+FD_ZERO用来清空文件描述符组。每次调用select前都需要清空一次。
+
+```
+fd_set writefds;
+FD_ZERO(&writefds)
+```
+
+FD_SET添加一个文件描述符到组中，FD_CLR对应将一个文件描述符移出组中
+
+```
+FD_SET(fd, &writefds);
+FD_CLR(fd, &writefds);
+```
+
+FD_ISSET检测一个文件描述符是否在组中，我们用这个来检测一次select调用之后有哪些文件描述符可以进行IO操作
+
+```
+if (FD_ISSET(fd, &readfds)){
+  /* fd可读 */
+}
+```
+
+select可同时监听的文件描述符数量是通过FS_SETSIZE来限制的，在Linux系统中，该值为1024，当然我们可以增大这个值，但随着监听的文件描述符数量增加，select的效率会降低，我们会在『不同IO多路复用方案优缺点』一节中展开。
+
+pselect和select大体上是一样的，但有一些细节上的[区别](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man2/select.2.html)。
+
+[打开链接查看完整的使用select的例子](https://link.zhihu.com/?target=https%3A//gist.github.com/hechen0/c134d2722fe8861288e060dd11e0f9c4)
+
+### poll
+
+相关函数定义
+
+```
+    #include <poll.h>
+
+    int poll(struct pollfd *fds, nfds_t nfds, int timeout);
+
+    #include <signal.h>
+    #include <poll.h>
+
+    int ppoll(struct pollfd *fds, nfds_t nfds,
+            const struct timespec *tmo_p, const sigset_t *sigmask);
+
+    struct pollfd {
+        int fd; /* file descriptor */
+        short events; /* requested events to watch */
+        short revents; /* returned events witnessed */
+    };
+```
+
+和select用三组文件描述符不同的是，**poll只有一个pollfd数组，数组中的每个元素都表示一个需要监听IO操作事件的文件描述符。events参数是我们需要关心的事件，revents是所有内核监测到的事件**。合法的事件可以参考[这里](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man2/poll.2.html)。
+
+[打开链接查看完整的使用poll的例子](https://link.zhihu.com/?target=https%3A//gist.github.com/hechen0/1bbc107793ec6cc3b00cbe7d3a54dd29)
+
+### [epoll](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man7/epoll.7.html)
+
+相关函数定义如下
+
+```
+    #include <sys/epoll.h>
+
+    int epoll_create(int size);
+    int epoll_create1(int flags);
+
+    int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
+
+    int epoll_wait(int epfd, struct epoll_event *events,
+                int maxevents, int timeout);
+    int epoll_pwait(int epfd, struct epoll_event *events,
+                int maxevents, int timeout,
+                const sigset_t *sigmask);
+```
+
+[epoll_create](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man2/epoll_create.2.html)&[epoll_create1](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man2/epoll_create.2.html)用于创建一个epoll实例，而[epoll_ctl](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man2/epoll_ctl.2.html)用于往epoll实例中增删改要监测的文件描述符，[epoll_wait](https://link.zhihu.com/?target=http%3A//man7.org/linux/man-pages/man2/epoll_wait.2.html)则用于阻塞的等待可以执行IO操作的文件描述符直到超时。
+
+[打开链接查看完整的使用epoll的例子](https://link.zhihu.com/?target=https%3A//github.com/millken/c-example/blob/master/epoll-example.c)
+
+### level-triggered and edge-triggered
+
+这两种底层的事件通知机制通常被称为水平触发和边沿触发，真是翻译的词不达意，如果我来翻译，我会翻译成：**状态持续通知和状态变化通知**。
+
+这两个概念来自电路，triggered代表电路激活，也就是有事件通知给程序，level-triggered表示只要有IO操作可以进行比如某个文件描述符有数据可读，每次调用epoll_wait都会返回以通知程序可以进行IO操作，edge-triggered表示只有在文件描述符状态发生变化时，调用epoll_wait才会返回，如果第一次没有全部读完该文件描述符的数据而且没有新数据写入，再次调用epoll_wait都不会有通知给到程序，因为文件描述符的状态没有变化。
+
+**select和poll都是状态持续通知的机制，且不可改变，只要文件描述符中有IO操作可以进行，那么select和poll都会返回以通知程序。而epoll两种通知机制可选**。
+
+### 状态变化通知(edge-triggered)模式下的epoll
+
+在epoll状态变化通知机制下，有一些的特殊的地方需要注意。考虑下面这个例子
+
+1. 服务端文件描述符rfd代表要执行read操作的TCP socket，rfd已被注册到一个epoll实例中
+2. 客户端向rfd写了2kb数据
+3. 服务端调用epoll_wait返回，rfd可执行read操作
+4. 服务端从rfd中读取了1kb数据
+5. 服务端又调用了一次epoll_wait
+
+在第5步的epoll_wait调用不会返回，而对应的客户端会因为服务端没有返回对应的response而超时重试，原因就是我上面所说的，epoll_wait只会在状态变化时才会通知程序进行处理。第3步epoll_wait会返回，是因为客户端写了数据，导致rfd状态被改变了，第3步的epoll_wait已经消费了这个事件，所以第5步的epoll_wait不会返回。
+
+我们需要配合非阻塞IO来解决上面的问题：
+
+1. 对需要监听的文件描述符加上非阻塞IO标识
+2. 只在read或者write返回EAGAIN或EWOULDBLOCK错误时，才调用epoll_wait等待下次状态改变发生
+
+通过上述方式，我们可以确保每次epoll_wait返回之后，我们的文件描述符中没有读到一半或写到一半的数据。
+
+## 不同IO多路复用方案优缺点
+
+## poll vs select
+
+poll和select基本上是一样的，poll相比select好在如下几点：
+
+1. poll传参对用户更友好。比如不需要和select一样计算很多奇怪的参数比如nfds(值最大的文件描述符+1)，再比如不需要分开三组传入参数。
+2. poll会比select性能稍好些，因为select是每个bit位都检测，假设有个值为1000的文件描述符，select会从第一位开始检测一直到第1000个bit位。但poll检测的是一个数组。
+3. select的时间参数在返回的时候各个系统的处理方式不统一，如果希望程序可移植性更好，需要每次调用select都初始化时间参数。
+
+而select比poll好在下面几点
+
+1. 支持select的系统更多，兼容更强大，有一些unix系统不支持poll
+2. select提供精度更高(到microsecond)的超时时间，而poll只提供到毫秒的精度。
+
+但总体而言 select和poll基本一致。
+
+## epoll vs poll&select
+
+epoll优于select&poll在下面几点：
+
+1. 在需要同时监听的文件描述符数量增加时，select&poll是O(N)的复杂度，epoll是O(1)，在N很小的情况下，差距不会特别大，但如果N很大的前提下，一次O(N)的循环可要比O(1)慢很多，所以高性能的网络服务器都会选择epoll进行IO多路复用。
+2. epoll内部用一个文件描述符挂载需要监听的文件描述符，这个epoll的文件描述符可以在多个线程/进程共享，所以epoll的使用场景要比select&poll要多。
+
+
+
+
+
+## nginx 原理
+
+![img](assets/20150413105353126.jpg) 
+
+![1659842960570](assets/1659842960570.png)
+
+1. woker数最多与cpu数相同
+
+2. 一个请求占用几个连接数？ 2（静态）或4（非静态）
+
+3. 每个worker支持的最大连接数是1024,假设一个master下有4个worker,求最大并发数
+
+   1024（work_connections）*4(work_processes) /2或4
