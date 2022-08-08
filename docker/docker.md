@@ -138,6 +138,8 @@ Docker 官方镜像仓库查找 Redis ：https://hub.docker.com/
 
 Docker Repositories are used to store or host the same images with multiple tags or versions
 
+-p --publish Publish a container's port(s) to the host
+
 image_name=Repository_name:tag
 
 没有指定版本默认latest

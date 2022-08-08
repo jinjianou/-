@@ -228,6 +228,8 @@ MISFIRE_INSTRUCTION_IGNORE_MISFIRE_POLICY MISFIRE_INSTRUCTION_FIRE_NOW MISFIRE_I
 
   上述自表达式用空格隔开
 
+  second 是最小单位 `* * * * * *`表示每s执行一次
+
     “0 0 12？* WED“ - 这意味着”每个星期三下午12:00“
 
   分钟 0/15 0,15都表示从0开始每隔15分钟
@@ -296,6 +298,70 @@ scheduler.getListenerManager().removeSchedulerListsenr(mySchedListener)
 
 # 与springboot 整合
 
+1. Quartz 存储方式有两种：MEMORY 和 JDBC。默认是内存形式维护任务信息
+2. Quartz 提供了单机版和集群版，默认就是单机版
+
+
+
+# MEMORY
+
+1. 定义Job类
+
+   ```
+   @Slf4j
+   public class MyJob extends QuartzJobBean {
+       //具体要执行的任务
+       @Override
+       protected void executeInternal(JobExecutionContext context) throws JobExecutionException {
+           log.info("幼年是盼盼，青年是晶晶，中年是冰墩墩，生活见好逐渐发福");
+       }
+   }
+   ```
+
+2. 定义JobDetail和对应trigger
+
+   ```
+   @Configuration
+   public class QuartzConfig {
+       @Bean
+       public JobDetail jobDetail() {
+   //        System.out.println(EmbeddedDatabaseConfiguration.class.getSimpleName());
+   //        System.out.println("=======================");
+           return JobBuilder.newJob(MyJob.class)
+                   // 指定任务的名称
+                   .withIdentity("myJob")
+                   // 任务描述
+                   .withDescription("任务描述：用于输出冬奥欢迎语")
+                   // 每次任务执行后进行存储
+                   //Jobs added with no trigger must be durable
+                   .storeDurably()
+                   .build();
+       }
+   
+   
+       @Bean
+       public Trigger trigger() {
+           //创建触发器
+           return TriggerBuilder.newTrigger()
+                   // 绑定工作任务
+                   .forJob(jobDetail())
+                   // 每隔 5 秒执行一次 job
+                   .withSchedule(CronScheduleBuilder.cronSchedule("40 39 11 * * ?"))
+                   .build();
+       }
+   }
+   ```
+
+
+
+
+
+
+
+# JDBC
+
+
+
 ## 下载sql
 
  http://www.quartz-scheduler.org/downloads/
@@ -327,6 +393,11 @@ scheduler.getListenerManager().removeSchedulerListsenr(mySchedListener)
     <groupId>mysql</groupId>
     <artifactId>mysql-connector-java</artifactId>
     <version>8.0.18</version>
+</dependency>
+<dependency>
+    <groupId>com.mchange</groupId>
+    <artifactId>c3p0</artifactId>
+    <version>0.9.5.4</version>
 </dependency>
 ```
 
@@ -479,46 +550,41 @@ spring:
       # 设置每次启动项目是否重建表结构，并且清空里面的数据
       initialize-schema: never
     scheduler-name: testScheduler
-  #    properties:
-#      org:
-#        quartz:
-#          scheduler:
-#            # Schedule调度器的实体名字 默认QuartzScheduler
-#            instanceName: DefaultQuartzScheduler
-#            # 生成intanceId的时候可以设置为AUTO
-#            # 从系统属性org.quartz.scheduler.instanceId取值时可以设置为SYS_PROP
-#            #默认 NON_CLUSTERED
-#            instanceId: AUTO
-#            rmi:
-#              export: false
-#              proxy: false
-#          jobStore:
-#            # 管理事务
-#            # If you need Quartz to work along with other transactions,you should use JobStoreCMT - in which case Quartz will let the app server container manage the transactions.
-#            class: org.quartz.impl.jdbcjobstore.JobStoreTX
-#            # The DriverDelegate is responsible for doing any JDBC work that may be needed for your specific database
-#            # 屏蔽db之间的差异
-#            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
-#            tablePrefix: QRTZ_
-#            # 使用的数据源名称
-#            dataSource: testdb
-#            isClustered: false
-#            # whether JobDataMaps的数据全部是String
-#            useProperties: false
-#            misfireThreshold: 60000
-#          dataSource:
-#            myDS:
-#              URL: jdbc:mysql://localhost:3306/quartz?characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true
-#              user: root
-#              password: 123456
-#              driver: com.mysql.cj.jdbc.Driver
-#              maxConnections: 5
-  datasource:
-    name: testdb
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/quartz?characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true
-    username: root
-    password: 123456
+    properties:
+      org:
+        quartz:
+          scheduler:
+            # Schedule调度器的实体名字 默认QuartzScheduler
+            instanceName: DefaultQuartzScheduler
+            # 生成intanceId的时候可以设置为AUTO
+            # 从系统属性org.quartz.scheduler.instanceId取值时可以设置为SYS_PROP
+            #默认 NON_CLUSTERED
+            instanceId: AUTO
+            rmi:
+              export: false
+              proxy: false
+          jobStore:
+            # 管理事务
+            # If you need Quartz to work along with other transactions,you should use JobStoreCMT - in which case Quartz will let the app server container manage the transactions.
+            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+            # The DriverDelegate is responsible for doing any JDBC work that may be needed for your specific database
+            # 屏蔽db之间的差异
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+            tablePrefix: QRTZ_
+            # 使用的数据源名称 与后面配置的dataSouce对应
+            dataSource:  myDS
+            isClustered: false
+            # whether JobDataMaps的数据全部是String
+            useProperties: false
+            misfireThreshold: 60000
+          dataSource:
+            myDS:
+#              type: com.alibaba.druid.pool.DruidDataSource
+              URL: jdbc:mysql://localhost:3306/quartz?characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true
+              user: root
+              password: 123456
+              driver: com.mysql.cj.jdbc.Driver
+              maxConnections: 5
 
 ```
 
@@ -538,7 +604,7 @@ spring.quartz.scheduler-name=testScheduler
 server.port=8080
 ```
 
-## 创建配置文件
+
 
 ### FactoryBean:
 
@@ -616,7 +682,13 @@ public class QuartzConfig {
 }
 ```
 
+
+
 ## 创建任务
+
+任务跟MEMORY相同或者向以下一样手动添加
+
+
 
 ```
 public class HelloJob extends QuartzJobBean {
@@ -677,5 +749,28 @@ public class QuartzController {
     }
 }
 ```
+
+
+
+# 集群
+
+1. spring.quartz.properties.org.quartz.jobStore.isClustered=true
+
+2. spring.quartz.properties.org.quartz.scheduler.instanceName=DefaultQuartzScheduler
+
+   注意 Quartz 使用同一组数据库表作集群时，只需要配置相同的 instanceName 实例名称就可以
+
+3. 为了方便启动多实例验证server.port=${random.int[10000,19999]}
+
+4. 启动多个实例
+
+   allow parallel run 
+
+此时APP1运行定时任务,APP2无
+
+停掉APP1,发现APP2开始运行
+
+![image-20220808143737310](assets/image-20220808143737310.png)
+
 
 
