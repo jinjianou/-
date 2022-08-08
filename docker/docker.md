@@ -53,7 +53,31 @@ Docker 是一个应用打包、分发、部署的工具
 桌面版：https://www.docker.com/products/docker-desktop
 服务器版：https://docs.docker.com/engine/install/#server
 
+**4.5+版本不稳定，容易崩溃**
+
 ### 启动报错解决
+
+![1659959457057](assets/1659959457057.png)
+
+卸载，重新安装4.4.4版本
+
+https://docs.docker.com/desktop/release-notes/#docker-desktop-444
+
+
+
+![1659960817058](assets/1659960817058.png)
+
+  在 Docker.ApiServices.WSL2.WslShortLivedCommandResult.LogAndThrowIfUnexpectedExitCode(String prefix, ILogger log, Int32 expectedExitCode) 位置 C:\workspaces\PR-17132\src\github.com\docker\pinata\win\src\Docker.ApiServices\WSL2\WslCommand.cs:行号 146
+
+cmd> wsl 参考的对象类型不支持尝试的操作。
+
+管理员  `netsh winsock reset`  
+
+ 
+
+
+
+
 
 win10启动闪退
 
@@ -104,6 +128,14 @@ https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi
 
 ![image.png](https://sjwx.easydoc.xyz/46901064/files/kv94feox.png)
 
+```
+{
+  "registry-mirrors":["http://f1361db2.m.daocloud.io"],
+   "debug":true
+
+}
+```
+
 
 
 # Docker 快速安装软件
@@ -134,11 +166,11 @@ Redis 官网：https://redis.io/
 Docker 官方镜像仓库查找 Redis ：https://hub.docker.com/
 ![Docker镜像官网](https://sjwx.easydoc.xyz/46901064/files/kv8zs4qr.png)
 
-一个命令跑起来：`docker run -d -p 6379:6379 --name redis redis［:latest］`
+一个命令跑起来：`docker run -d -p 6380:6379 --name redis redis［:latest］`
 
 Docker Repositories are used to store or host the same images with multiple tags or versions
 
--p --publish Publish a container's port(s) to the host
+-p --publish Publish a container's port(s) to the host  container's port：6379   host ：6380
 
 image_name=Repository_name:tag
 
@@ -754,3 +786,13 @@ docker 官方的镜像托管有时候上传和下载都太慢了，如果你想�
 
 > 注意，volumes-from 指定的是容器名字
 > strip 1 表示解压时去掉前面1层目录，因为压缩时包含了绝对路径
+
+
+
+
+
+# 其他
+
+查看ip    IpAddress
+
+docker inspect container name|id

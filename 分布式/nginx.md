@@ -1860,3 +1860,15 @@ epoll优于select&poll在下面几点：
 3. 每个worker支持的最大连接数是1024,假设一个master下有4个worker,求最大并发数
 
    1024（work_connections）*4(work_processes) /2或4
+
+
+
+
+
+
+
+
+
+# 部署Vue+springboot项目
+
+https://blog.csdn.net/kung_com/article/details/96113183
