@@ -1134,7 +1134,7 @@ Entity Tag
 
 实现：
 
-1. 把静态资源放在独立的服务器上，主流的嘴阀
+1. 把静态资源放在独立的服务器上，主流的做法
 
 2. 动静文件混合在一起发布，通过nginx分开
 
@@ -1872,3 +1872,131 @@ epoll优于select&poll在下面几点：
 # 部署Vue+springboot项目
 
 https://blog.csdn.net/kung_com/article/details/96113183
+
+listen 192.168.162.100:80
+
+前端资源部署路径到nginx html/dist
+
+linux后端tomcat8080
+
+​	部署springboot不需要再启动tomcat,直接java -jar -Dserver.port=8088 xxx.jar
+
+​	得先配置spring-boot-maven-plugin，则没main class
+
+ ## vue单页应用打包时存在的相对/绝对路径问题
+
+修改webpack配置
+
+ 1. 使用相对路径
+
+    config-index.js
+
+    build: { 
+
+    ​	...
+
+    ​	assetsPublicPath: './'
+
+    }
+
+ 2. 图片路径问题
+
+    build-utils.js
+
+      if (options.extract) {
+
+    ​      return ExtractTextPlugin.extract({
+
+    ​        use: loaders,
+
+    ​        fallback: 'vue-style-loader',
+
+    ​	publicPath: '../../'
+
+    ​      })
+
+    ​    }
+
+
+
+## 配置
+
+```
+    server {
+			listen       80;
+			server_name  localhost;
+
+	location / {
+		root html/wiki/dist;
+		index index.html index.htm index.jsp;
+		try_files $uri $uri/ @router;
+	}
+
+	location @router {
+		# rewrite regex replacement [flag]
+		#last：本条重写规则匹配完成后，终止匹配后续重写规则，并重新发起请求继续匹配新的location URI规则；浏览器地址栏URL地址不变
+		rewrite ^(.+)$ /index.html last;
+	}
+}
+
+    server {
+			listen       8088;
+			server_name  localhost;
+
+location /test {
+	proxy_pass http://127.0.0.1:8088;
+	proxy_connect_timeout 3; 
+	proxy_send_timeout 30;
+	proxy_read_timeout 30; proxy_set_header X-Forwarded-Host $host; proxy_set_header X-Forwarded-Server $host; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; client_max_body_size 100m;
+	}
+}
+
+```
+
+问题： 8088只监听浏览器输入端口的访问，后台接口访问无效
+
+解决：
+
+1. 前端的requestUrl  http://localhost:8088/xxx  这里的localhost指的是浏览器所在的主机 而后台实际部署到了虚拟机上 192.168.162.100
+2. 去掉后一个server
+3. 前端配置跨域
+   - 在后端解决（已解决）
+   - 在nginx解决 解决的是http://localhost/test/xxx的跨域
+
+```
+location / {//此处是跨域设置
+	# 以下都是解决跨域需要添加的请求头信息
+	proxy_set_header Host $http_host;
+   	proxy_set_header X-Real-IP $remote_addr;
+   	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+   	add_header Access-Control-Allow-Origin *;
+   	add_header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept";
+   	add_header Access-Control-Allow-Methods "GET, POST, OPTIONS";	
+
+  	# 把cookie中的path部分从/api替换成/service
+      proxy_cookie_path /api /;
+      # 把cookie的path部分从localhost:8080替换成your.domain.name
+      proxy_cookie_domain localhost:80 http://localhost:8088;
+
+
+            root  ...
+            index ...           
+        }
+
+
+```
+
+- 在前端解决（**未解决**)
+
+  vue.config.js 或者 webpack.js
+
+   '/api': {
+        	// 后台接口真实地址
+          target: 'http://localhost:8080/',
+          changeOrigin: true,
+          pathRewrite: {
+             // 将 步骤1 中设置的请求中的 /api/ 重写为 /project/
+             // 加上上面的target， 请求最终会变为 http://localhost:8080/project/
+             '^/api': 'project'
+           }
+
