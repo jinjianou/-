@@ -55,6 +55,57 @@ Docker 是一个应用打包、分发、部署的工具
 
 **4.5+版本不稳定，容易崩溃**
 
+
+
+### centeros 安装
+
+1. yum install -y yum-utils device-mapper-persistent-data lvm2 --skip-broken 
+
+2. yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+   
+   sed -i 's/download.docker.com/mirrors.aliyun.com\/docker-ce/g' /etc/yum.repos.d/docker-ce.repo
+
+   
+
+   yum makecache fast
+
+3. yum install -y docker-ce 
+
+4. docker -v 
+
+5. systemctl start docker   # 启动Docker服务
+   systemctl stop docker    # 停止Docker服务
+   systemctl restart docker # 重启Docker服务 
+   systemctl status docker  # 查看Docker服务状态
+   systemctl enable docker  # 设置Docker开机启动
+   systemctl disable docker # 取消Docker开机启动
+
+6. firewall-cmd --zone=public --add-port=端口号/tcp --permanent # 开放端口 
+
+   firewall-cmd --reload										# 重载配置 
+
+   systemctl stop firewalld    # 关闭防火墙
+
+    systemctl disable firewalld # 禁止开机启动防火墙
+
+    systemctl status firewalld  # 查看防火墙状态 
+
+
+
+问题：Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+
+systemctl status docker 没开启开启
+
+问题： docker-compose: command not found
+
+1. wget https://github.com/docker/compose/releases/download/1.14.0-rc2/docker-compose-Linux-x86_64 
+
+2. mv docker-compose-Linux-x86_64 /usr/local/bin/docker-compose 
+
+3. chmod +x /usr/local/bin/docker-compose 
+
+   /usr/local/bin下面的命令所有用户都可以直接使用，默认（初始化）配置到$PATH
+
 ### 启动报错解决
 
 ![1659959457057](assets/1659959457057.png)

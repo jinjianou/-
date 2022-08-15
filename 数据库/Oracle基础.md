@@ -916,6 +916,79 @@ oracle不推荐指定事务回滚到指定回滚段，**尽量使用自动回滚
         }
 ```
 
+
+
+### url格式
+
+使用jdbc连接oracle时url有三种格式 
+
+sysdba
+
+1. jdbc:oracle:thin:@host:port:SID 
+
+   Example: jdbc:oracle:thin:@localhost:1521:orcl 
+
+sid: select value from v$parameter where name=‘instance_name’; 
+
+2. jdbc:oracle:thin:@//host:port/service_name Example:jdbc:oracle:thin:@//localhost:1521/orcl.city.com 
+
+   service_name: select value from v$parameter where name=‘service_names’; 
+
+3. jdbc:oracle:thin:@TNSName
+   Example: jdbc:oracle:thin:@TNS_ALIAS_NAME
+   我在谷歌上找了一些资源，要实现这种连接方式首先要建立tnsnames.ora文件，然后通过System.setProperty指明这个文件路径。再通过上面URL中的@符号指定文件中的要使用到的资源。
+   这种格式我现在水平几乎没见过，对于我来说用得到这种的情况并不多吧。当然既然是通过配置文件来读取指定资源肯定也可以直接将资源拿出来放在URL中，直接放在URL中的URL模版是下面这样的（tnsnames.ora这个文件中放的就是@符号后面的那一段代码，当然用文件的好处就是可以配置多个，便于管理）：
+   
+
+
+
+
+
+##  对象或数组转成临时表
+
+### 对象
+
+mysql
+
+```
+select * from test t1 join (
+  select  #{id} id,#{name} name
+) t2 on t1.id=t2.id
+```
+
+oralce
+
+
+
+### 数组
+
+mysql
+
+```
+select * from test t1 join (
+    <foreach collection="testList" item="test" separator="union">
+      select  #{test.id} id,#{test.name} name
+    </foreach>
+) t2 on t1.id=t2.id
+```
+
+oralce
+
+```
+select t1.id,t1.name from test t1 join (
+<foreach collection="testList" item="test" separator="union">
+  select  #{test.id} id,#{test.name} name
+</foreach>
+from dual
+) t2 on t1.id=t2.id
+```
+
+
+
+**注意： sqldeveloper插入时，记得得commit，否则mybatis查到为空**
+
+
+
 # 操作细节
 
 ## 查看当前的所有数据库

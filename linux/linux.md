@@ -1484,6 +1484,8 @@ case $J in
 
 ## 对文件操作 sed
 
+stream editor for filtering and transforming file
+
 * **如果只是读取筛选文件行数据 用egrep就行了**
 
 * sed是一个行（流）编辑器，非交互式的对文件内容进行**增删改查**操作，在命令行输入
