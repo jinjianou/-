@@ -1154,6 +1154,78 @@ public Result rest(@PathVariable Integer id){
 
     spring.jackson.defaultPropertyInclusion=NON_NULL
 
+### restTemplate api
+
+**Get**
+
+**getForEntity**
+
+public <T> ResponseEntity<T> getForEntity(String url, Class<T> responseType, Object... uriVariables)
+
+>  uriVariables指的是pathParam  /{id}
+
+public <T> ResponseEntity<T> getForEntity(String url, Class<T> responseType, Map<String, ?> uriVariables)
+
+public <T> ResponseEntity<T> getForEntity(URI url, Class<T> responseType)
+
+
+
+**getForObject**
+
+该方法可以理解为对 getForEntity 的进一步封装，
+ 它通过 HttpMessageConverterExtractor 对 HTTP 的请求响应体 body内容进行对象转换， 实现请求直接返回包装好的对象内容
+
+
+
+**POST**
+
+**postForEntity**
+
+- `public <T> ResponseEntity<T> postForEntity(String url, @Nullable Object request, Class<T> responseType, Object... uriVariables)`
+- `public <T> ResponseEntity<T> postForEntity(String url, @Nullable Object request, Class<T> responseType, Map<String, ?> uriVariables)`
+- `public <T> ResponseEntity<T> postForEntity(URI url, @Nullable Object request, Class<T> responseType)`
+
+> request参数， 该参数可以是一个普通对象， 也可以是一个HttpEntity对象。 如果是
+>  一个**普通对象**， 而非HttpEntity对象的时候， RestTemplate会将请求对象转换为一
+>  个HttpEntity对象来处理， 其中Object就是 request 的类型， request内容会被视
+>  作完整的**body**来处理；而如果 request 是一个**HttpEntity对象**， 那么就会被当作一
+>  个完成的HTTP请求对象来处理， 这个 request 中不仅**包含了body的内容， 也包含了
+>  header的内容**。
+
+​	   LinkedMultiValueMap key1=value1&key2=value2
+
+​		HashMap  {"key1":"value1"}
+
+> 
+
+
+
+**PostForObject**
+
+该方法跟getForObject方法类似， 它的作用是简化postForEntity的后续处理。 通过直接将请求响应的body内容包装成对象来返回使用。
+
+
+
+**Put**
+
+```
+public void put(String url, @Nullable Object request, Object... uriVariables)
+public void put(String url, @Nullable Object request, Map<String, ?> uriVariables)
+public void put(URI url, @Nullable Object request)
+```
+
+PUT请求可以通过put方法调用，put方法的参数和前面介绍的postForObject方法的参数基本一致，只是put方法没有返回值而已。
+
+
+
+**delete**
+
+```
+public void delete(String url, Object... uriVariables)
+public void delete(String url, Map<String, ?> uriVariables)
+public void delete(URI url)
+```
+
 ### webclient  
 
 都可以调用远程服务 依赖webflux(响应式无堵塞)

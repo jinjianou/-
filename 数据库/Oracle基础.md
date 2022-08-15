@@ -1329,3 +1329,26 @@ involving GROUP BY, DISTINCT, UNION, INTERSECT, or MINUS. ORA-01786
  select userenv('sid') from dual 获取当前session id
  其他session不可写,除非其commit或rollback
  如果普通的select则可以读,但如果select for update则取决与选中行是否已经被其他session锁定
+
+
+
+## execute immediate && using
+
+解析并马上执行动态的SQL语句或匿名pl/sql块
+
+```
+v_sql varchar(100):='begin p_test(:v1,:v2,:v3); end;';
+execute immediate v_sql using in '1',in '2',out c;
+```
+
+值得注意的是：默认为in，in可省，out不可省！
+
+using还可以实现表等值连接(sql/92标准)
+
+select emptno,ename,sal,deptno,dname from emp e inner join dept d using(deptno);
+
+等价于
+
+select emptno,ename,sal,deptno,dname from emp e inner join dept d  where e.deptno=d.deptno;
+
+select * 最后select deptno结果只有一列
