@@ -560,9 +560,87 @@ String pathName = zk.create("/xxoo", "hello zk".getBytes(StandardCharsets.UTF_8)
         , ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
 ```
 
+初始化时，
 
+1. client会跟某一台connectionString连接，若该台server宕机，client会重新连到cs中另外的server
+
+2. **重连后session不会改变**
+
+3. **create初始化连接的是那一台主机？对cli而言是整个zk server集群**
+
+4. **集群网络无法选出leader(不可用)，cli可读吗? 依旧不可读 ConnectionLoss 对cli而言zk 集群不可用，无法进行任何操作**
+
+   
+
+   
 
 **获取**
+
+```
+Stat stat = new Stat();
+byte[] data = zk.getData("/xxoo", new Watcher() {
+    @Override
+    public void process(WatchedEvent watchedEvent) {
+        System.out.println("get DataWatch" + watchedEvent);
+    }
+}, stat);
+```
+
+**这里的watch对path生效且仅生效一次**
+
+
+
+**修改**
+
+```
+Stat newStat=zk.setData("/xxoo","newData".getBytes(),stat.getVersion());
+zk.setData("/xxoo","newData2".getBytes(),1); //newStat.getVersion()
+```
+
+第二次(及以后)修改不会触发watcher
+
+如果想第二次也触发
+
+1. default session
+
+   ```
+   byte[] data = zk.getData("/xxoo", new Watcher() {
+       @SneakyThrows
+       @Override
+       public void process(WatchedEvent watchedEvent) {
+           System.out.println("get DataWatch" + watchedEvent);
+           zk.getData("/xxoo",true,stat);
+       }
+   }, stat);
+   ```
+
+   注意：这里的watcher用的时session的watcher 也就是执行的是new zk时的watcher process
+
+
+
+2. 如果想要path session 
+
+   ```
+   zk.getData("/xxoo",this,stat);
+   ```
+
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -643,3 +721,54 @@ reactive 响应式编程，更充分的压榨OS,HW资源，性能
 - 服务器5启动，后面的逻辑同服务器4成为小弟。
 
 注意： **过半指的是初始状态的半数，而不是实时状态** 不如原来5台服务器，最少需要存活3台，而不是当还存活3台，有2台同意即可
+
+
+
+
+
+# 分布式注册发现
+
+![1660739445907](assets/1660739445907.png)
+
+
+
+获取配置
+
+```
+//watcher
+    zk.exists("/AppConf", new Watcher() {
+                @Override
+                public void process(WatchedEvent watchedEvent) {
+                }
+
+            },
+            //statCallback
+            new AsyncCallback.StatCallback() {
+                @Override
+                public void processResult(int rc, String path, Object ctx, Stat stat) {
+                    if(stat!=null){
+                        //DataCallback
+                        zk.getData();
+                    }
+                }
+            }
+,"abc"
+    );
+
+}
+```
+
+上述一共出现3个callback，导致层级过于深入，可读性差
+
+优化为
+
+
+
+注意： **不存在的节点 stat为null**
+
+
+
+# 分布式锁
+
+# reactive
+
