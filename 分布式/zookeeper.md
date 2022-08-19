@@ -762,9 +762,33 @@ reactive 响应式编程，更充分的压榨OS,HW资源，性能
 
 优化为
 
+```
+ ExistJudgeWather watcher = new ExistJudgeWather();
+watcher.setZk(zk);
+MyConf conf = new MyConf();
+watcher.setConf(conf);
 
+//zk.exists("/AppConf",watcher,watcher,"abc")
+ExecutorService executor = Executors.newSingleThreadExecutor();
+//注意: 此时会返回一个新的future,完成是针对这个新的结果的
+//如果runAsync的任务也是异步的，那么get()堵塞同步将没有意义
+//异步套异步 同步套异步  get（）都没有意义 底层是executor.execute
+CompletableFuture<Void> future= CompletableFuture.runAsync(
+        ()->zk.exists("/AppConf",watcher,watcher,"abc"),executor);
+
+Thread.sleep(2000);
+future.whenComplete((res,err)->{
+    System.out.println("get conf:  "+conf.getConf());
+});
+/*executor.execute(()->zk.exists("/AppConf",watcher,watcher,"abc"));
+executor.shutdown();
+executor.awaitTermination(Long.MAX_VALUE,TimeUnit.SECONDS);
+System.out.println("get conf:  "+conf.getConf());*/
+```
 
 注意： **不存在的节点 stat为null**
+
+但此时依旧还有问题，也就是exists执行的时间并不一样 定时并无意义
 
 
 
