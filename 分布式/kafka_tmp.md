@@ -28,5 +28,11 @@
 
 * zookeeper
 
-1. 
+  修改配置
+
+  >broker.id=0...n # 根据序列来
+  >
+  >listeners
+  >
+  >zookeeper.connect=CenterOSA:2181,CenterOSB:2181.....
 

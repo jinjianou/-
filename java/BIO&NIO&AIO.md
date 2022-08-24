@@ -189,9 +189,28 @@ public class Client {
 }
 ```
 
-注意: **退出serverReader等try-with代码块会JVM自动关闭socket 准确的说 scoket的inputstream/outpuststream close,socket都会close** 
+注意: 
 
+0. **当有一方close socket 表示这个socket两端(cli,server)的连接都断开了 ,outputstream不可用,inputstream读取为null**
 
+1. **退出serverReader等try-with代码块会JVM自动关闭socket 准确的说 scoket的inputstream/outpuststream close,socket都会close** 
+
+如
+
+```
+for (Socket socket : clis) {
+    try(BufferedWriter writer=new BufferedWriter(
+            new OutputStreamWriter(socket.getOutputStream()))) {
+        writer.write(msg);
+        writer.newLine();
+        writer.flush();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+```
+
+写完就会关闭所有socket
 
 # BIO
 
@@ -220,3 +239,155 @@ public class Client {
 
 
 ![img](assets/487c5e1e2dc91062163853e0e3c1a4c7.png)
+
+
+
+**自研**
+
+```
+public class ChatClient {
+    private static final int PORT=8088;
+    private static final String IP="127.0.0.1";
+
+
+    public static void main(String[] args) throws IOException {
+        Socket socket = new Socket(IP, PORT);
+
+        UserInputhandler handler = new UserInputhandler(socket);
+        new Thread(handler).start();
+        BufferedReader serverReader=null;
+        String msg;
+        try {
+             serverReader = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream()));
+            while ((msg=serverReader.readLine())!=null) {
+                System.out.println(msg);
+            }
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }finally {
+            if (serverReader!=null) {
+                serverReader.close();
+            }
+            socket.close();
+        }
+    }
+}
+class UserInputhandler implements Runnable {
+    private Socket socket;
+//    private volatile boolean flag=true;
+    private static final String QUIT = "quit";
+
+    public UserInputhandler(Socket socket) {
+        this.socket = socket;
+    }
+
+/*    public void stop(){flag=false; }
+    public boolean getFlag(){ return flag;}*/
+    @Override
+    public void run() {
+        BufferedReader reader=null;
+        BufferedWriter writer;
+        try {
+            reader = new BufferedReader(
+                    new InputStreamReader(System.in));
+            writer = new BufferedWriter(
+                    new OutputStreamWriter(socket.getOutputStream()));
+            String msg;
+
+            while ((msg = reader.readLine()) != null) {
+                //发送给server ChatHandler 由它分发给其他client
+                writer.write(msg);
+                writer.newLine();
+                writer.flush();
+
+                //停止输入
+                if (Objects.equals(msg.toLowerCase(), QUIT)) break;
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            }finally{
+                if (reader!=null) {
+                    try {
+                        reader.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+}
+```
+
+```
+public class ChatServer {
+    private static final int PORT=8088;
+    private static final List<Socket> clis=new ArrayList<>();
+
+
+    //main 充当 Acceptor
+    public static void main(String[] args) throws IOException {
+        ServerSocket server = new ServerSocket(PORT);
+        System.out.println("启动服务器,监听端口"+PORT);
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        while (true){
+            Socket cli = server.accept();
+            System.out.println("[客户端] "+cli.getPort()+"已连接");
+
+            ChatHandler handler = new ChatHandler(cli,clis);
+            threadPool.execute(handler);
+        }
+    }
+}
+class ChatHandler implements Runnable{
+    private Socket cli;
+    private List<Socket> clis;
+    private static final String QUIT = "quit";
+
+    public ChatHandler(Socket socket,List<Socket> clis) {
+        this.cli = socket;
+        this.clis=clis;
+    }
+
+    @Override
+    public void run() {
+        //addClient
+        clis.add(cli);
+
+        try(BufferedReader reader=new BufferedReader(
+                new InputStreamReader(cli.getInputStream()))){
+            String msg;
+            while ((msg = reader.readLine())!=null){
+                System.out.println("[客户端] "+cli.getPort()+" 发来消息: "+msg);
+                BufferedWriter writer;
+                if (Objects.equals(msg.toLowerCase(), QUIT)) break;
+                //分发给多个client
+                for (Socket socket : clis) {
+                    try{
+                        writer=new BufferedWriter(
+                            new OutputStreamWriter(socket.getOutputStream()));
+                        writer.write(msg);
+                        writer.newLine();
+                        writer.flush();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+            clis.remove(cli);
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+```
+
+​	上述更多是面向过程的思想
+
+
+
+**面向对象**
+
