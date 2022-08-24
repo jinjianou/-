@@ -523,6 +523,62 @@ router.afterEach(() => {
 
    - this.$nextTick
 
+     将回调延迟到下次 **DOM 更新循环之后执行**。在修改数据之后立即使用它，然后等待 DOM 更新。
+     
      next tick 下一xxx 联系上下文 如 next tick of clock 下一时刻 ... rain fall, the next tick is a never- ending 下一滴雨
+     
+     案例一
+     
+     ```
+     mounted() {
+           console.log(333);
+           console.log(this.$refs['hello']);
+           this.$nextTick(() => {
+             console.log(444);
+             console.log(this.$refs['hello']);
+           });
+         },
+         created() {
+           console.log(111);
+           console.log(this.$refs['hello']);
+           this.$nextTick(() => {
+             console.log(222);
+             console.log(this.$refs['hello']);
+           });
+         }
+         
+     ```
+     
+     >
+     >
+     >111
+     >
+     >undefined
+     >
+     >333
+     >
+     >div obj
+     >
+     >222
+     >
+     >div obj
+     >
+     >444
+     >
+     >div obj 
 
-https://www.cnblogs.com/jin-zhe/p/9985436.html
+
+
+案例二
+
+```
+this.value = '你好啊'; //初始值Hello world!
+        console.log(this.$refs['hello'].innerText); 
+        this.$nextTick(() => {
+          console.log(this.$refs['hello'].innerText);
+        });
+```
+
+>Hello world!
+>
+>你好啊

@@ -503,7 +503,7 @@ Class<NetworkTest> cls= NetworkTest.class;
 
    假设两台主机A和B，A和B已经有了连接的介质，现在A给B传输数据，这些数据其实就是一堆的0和1，B主机收到这一堆0和1 要怎么解析呢？多少个电信号算一组？每个信号位有何意义？到底是按8位还是按16位解析？如何解析就是数据链路层干的事情 （解析电信号）
 
-   以太网规定，一组电信号构成一个数据包，叫做"帧"（Frame）。每一帧分成两个部分：标头（Head）和数据（Data）。 
+   以太网规定，一组电信号构成一个数据包，叫做"帧"（Frame）。每一帧分成两个部分：标头（Head）和数据（Data）。 最大1518字节
 
    head包含：（固定18个字节）
 
@@ -1812,6 +1812,8 @@ Processing elements with an explicit `for-`loop is inherently(本质上) serial
 
   
 
+  ```
+  
   ```
 # lambda
 

@@ -339,5 +339,3 @@ Ant design of vue
 https://2x.antdv.com/docs/vue/introduce-cn/ 支持vue3
 
 https://element-plus.org/zh-CN/guide/quickstart.html  支持vue3
-
-https://www.cnblogs.com/jin-zhe/p/9985436.html

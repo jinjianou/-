@@ -450,6 +450,28 @@ ON UPDATE 指在更新时的处理方式，常用的处理方式包括以下几�
 | ON UPDATE SET NULL                              | 更新父表记录时，比如更改主表的主键时，子表记录设置为NULL     |
 | ON UPDATE NO ACTION /ON UPDATE RESTRICT（默认） | 当在父表（即外键的来源表）中 增加 对应记录时，首先检查该记录是否有对应外键，如果有则不允许 增加 |
 
+
+
+# Schema
+
+schema在数据库中表示的是**数据库对象集合**，它包含了各种对像，比如：表，视图，存储过程，索引等等.一般情况下一个用户对应一个集合，所以为了区分不同的集合就需要给不同的集合起名字。用户的schema名就相当于用户名，并作为该用户缺省schema。所以说schema集合看上去像用户名。例如当我们访问一个数据表时，如果该表没有指明属于哪个schema，系统就会自动的加上缺省的schema。
+
+![img](https://img.php.cn/upload/article/000/000/028/5cb80cc26def3222.jpg)
+
+**创建**
+
+需要注意的是，在不同的数据库中要创建的Schema方法是不一样的，但是它们有一个共同的特点就是都支持CREATE SCHEMA语句
+
+​	在MySQL数据库中，我们可以通过CREATE SCHEMA语句来创建一个数据库
+
+​	在Oracle中，由于数据库用户已经创建了一个模式，所以CREATE SCHEMA语句创建的是一个schema，它允许将schema同表和视图关联起来，授权，从而不必在多个事务中发出多个SQL语句。
+
+​	在SQL Server中，CREATE SCHEMA会按照名称来创建一个模式，与MySQL不同，CREATE SCHEMA语句创建了一个单独定义到数据库的模式。和Oracle数据库也有不同，它实际上创建了一个模式，而且一旦创建了模式，就可以往模式中添加用户和对象。
+
+总结: **在mysql中基本认为schema和数据库(database)是相同的**，也就是说schema名称和数据库实例的名称是相同的，**一个数据库只拥有一个schema**。但是其他数据库产品会有所不同，**在oracle数据库中，schema是数据库database的一部分(用户名相当于一个schema名,并作为该用户缺省schema)**
+
+
+
 # <u>事务</u>
 
 事务是保证多个**SQL操作的一致性**，如果一条失败全部SQL也将失效。 
