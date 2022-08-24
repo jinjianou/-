@@ -758,6 +758,14 @@ reactive 响应式编程，更充分的压榨OS,HW资源，性能
 }
 ```
 
+Watcher
+
+> If the watch is non-null and **the call is successful** (no exception is thrown), **a watch will be left on the node with the given path.** The watch will **be triggered by a successful operation that** **creates/delete the node or sets** the data on the node.
+
+statCallback
+
+> 针对exists操作的异步回调
+
 上述一共出现3个callback，导致层级过于深入，可读性差
 
 优化为
@@ -788,11 +796,276 @@ System.out.println("get conf:  "+conf.getConf());*/
 
 注意： **不存在的节点 stat为null**
 
-但此时依旧还有问题，也就是exists执行的时间并不一样 定时并无意义
+但此时依旧还有问题，也就是exists执行的时间并不一样 定时并无意义 依旧考虑CuntdownLatch实现
+
+```
+ExistJudgeWather
+dataCallback latch.countDown();
+public void await() {
+    try {
+        zk.exists("/AppConf",this,this,"abc");
+        latch.await();
+    } catch (InterruptedException e) {
+        e.printStackTrace();
+    }
+}
+
+@Test
+   watcher.await();
+        System.out.println("get conf:  "+conf.getConf());
+```
+
+
+
+**全部代码**
+
+```
+ExistJudgeWather watcher = new ExistJudgeWather();
+watcher.setZk(zk);
+MyConf conf = new MyConf();
+watcher.setConf(conf);
+
+//1. 节点不存在 => 创建
+//2. 节点存在 => 修改
+//3. 节点存在 => 删除
+watcher.await();
+while (true){
+    if(Objects.equals("",conf.getConf())){
+        System.out.println("node data is missing....");
+        watcher.await();
+    }else {
+        System.out.println("get conf:  " + conf.getConf());
+        Thread.sleep(1000);
+    }
+}
+```
+
+```
+public class ExistJudgeWather implements Watcher, AsyncCallback.StatCallback, AsyncCallback.DataCallback {
+
+    private ZooKeeper zk;
+
+    private MyConf conf;
+
+    private  CountDownLatch latch=new CountDownLatch(1);
+
+    public void setZk(ZooKeeper zk) {
+        this.zk = zk;
+    }
+
+    public void setConf(MyConf conf) {
+        this.conf = conf;
+    }
+
+    //dataCallback
+    @Override
+    public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
+        if(data!=null){
+            conf.setConf(new String(data));
+            latch.countDown();
+        }
+
+    }
+
+
+    //statCallback
+    @Override
+    public void processResult(int rc, String path, Object ctx, Stat stat) {
+        if(stat!=null){
+            zk.getData(path,this,this,ctx);
+        }
+    }
+
+    // watcher
+    @Override
+    public void process(WatchedEvent event) {
+        switch (event.getType()) {
+            case None:
+                break;
+            case NodeCreated:
+                zk.getData("/AppConf",this,this,"abc");
+                break;
+            case NodeDeleted:
+                conf.setConf("");
+                latch=new CountDownLatch(1);
+                break;
+            case NodeDataChanged:
+                zk.getData("/AppConf",this,this,"abc");
+                break;
+            case NodeChildrenChanged:
+                break;
+        }
+    }
+
+    public void await() {
+        try {
+            zk.exists("/AppConf",this,this,"abc");
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
 
 
 
 # 分布式锁
+
+![1660959555330](assets/1660959555330.png)
+
+
+
+```
+    public void lockTest(){
+        for (int i = 0; i < 10; i++) {
+            new Thread(()->{
+                String threadName = Thread.currentThread().getName();
+                LockWatcher watcher = new LockWatcher();
+                watcher.setThreadName(threadName);
+                watcher.setZk(zk);
+
+                //获取锁
+                watcher.tryLock();
+                // do something
+                System.out.println(threadName+" is working...");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                //释放锁
+                watcher.unlock();
+            }).start();
+        }
+
+        //防止@Test执行完毕，上述多线程并不会继续执行
+        while (true){}
+    }
+```
+
+```
+public class LockWatcher implements Watcher, AsyncCallback.StringCallback
+        , AsyncCallback.ChildrenCallback, AsyncCallback.StatCallback {
+    private ZooKeeper zk;
+    private String threadName;
+    private CountDownLatch latch=new CountDownLatch(1);
+    private String pathname;
+
+    public void setThreadName(String threadName) {
+        this.threadName = threadName;
+    }
+
+    public void setZk(ZooKeeper zk) {
+        this.zk = zk;
+    }
+
+    @Override
+    public void process(WatchedEvent event) {
+        switch (event.getType()) {
+            case None:
+                break;
+            case NodeCreated:
+                break;
+            case NodeDeleted:
+                //若前一节点被删除 重新判断自己在children中的位置
+                zk.getChildren("/",false,this,"lock_context");
+                break;
+            case NodeDataChanged:
+                break;
+            case NodeChildrenChanged:
+                break;
+        }
+    }
+
+    @SneakyThrows
+    public void tryLock() {
+        zk.create("/lock",threadName.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE
+                , CreateMode.EPHEMERAL_SEQUENTIAL,this,"lock_context");
+        //最小的节点执行
+        latch.await();
+    }
+
+    @SneakyThrows
+    public void unlock() {
+        //释放锁实际就是删除临时节点 -1 present any
+        System.out.println(threadName+ " is over... ");
+        zk.delete(pathname,-1);
+    }
+
+    //create stringcallback
+    @Override
+    public void processResult(int rc, String path, Object ctx, String name) {
+        System.out.println(threadName+" create node "+name);
+        //path 为/lock   name为全名 如/lock0000000020
+        this.pathname=name;
+        //无需监听/testLock的变动
+        zk.getChildren("/",false,this,ctx);
+    }
+
+
+    //getChildren children callback
+    @Override
+    public void processResult(int rc, String path, Object ctx, List<String> children) {
+        Collections.sort(children);
+        // 0. 还存活的children
+        // 1. "/"+chid=pathname
+        // 2. path  /
+        int index = children.indexOf(pathname.substring(1));
+        if(index==0) { //最小的node
+            latch.countDown();
+        }else{
+            //watch前一个node是否被删除（释放锁），StatCallback保证zk可用
+            zk.exists("/"+children.get(index-1),this,this,ctx);
+        }
+
+    }
+
+    //exists statCallback
+    @Override
+    public void processResult(int rc, String path, Object ctx, Stat stat) {
+
+    }
+}
+```
+
+
+
+问题1： 若将test中sleep这段注释掉，后续节点将不再执行（n>=2）
+
+原因：lock00执行太快，导致zk.exists("/lock00"...)时已经不存在了，自然这这个节点watcher delete没有意义
+
+​	 通过 exists statCallback可以验证
+
+```
+   System.out.println(path+((stat==null)?" is null ":" is not null"));
+```
+
+​	
+
+解决： 1. 延时
+
+	 2. 参照可重入锁
+
+
+
+# 可重入锁
+
+对一般的锁而言，同一个线程连续两次对同一把锁lock，会导致后者永远卡死
+
+```
+        NonReentrantLock lock = new NonReentrantLock();
+        lock.lock();
+        lock.lock(); //一直堵塞，死锁
+        lock.unlock();
+        lock.unlock();
+```
+
+
+
+
+
+
 
 # reactive
 
