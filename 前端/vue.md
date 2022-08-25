@@ -1747,6 +1747,8 @@ vue-cli中一切皆组件
 
    取消ESLint验证规则   webpack.base.conf.js  注释掉      ...(config.dev.useEslint ? [createLintingRule()] : []), 
 
+   **webstorm关闭eslint语法检查**: File-->Setting-->Languages&Frameworks-->Code Quality Tools-->ESLint 把Disable ESlint选项勾选上
+   
    
 
 ## 前端标准开发
@@ -2532,21 +2534,21 @@ export default new Vuex.Store({
 ​		
 ​			next(vm=>{...}) //这里的vm就是当前组件的实例 相当于this
 ​	
-	    },
-	
+​	    },
+​	
 	    beforeRouteUpdate (to, from, next) {
 
 
 ​	     
 ​	    },
 ​	
-	    beforeRouteLeave (to, from, next) {
+​	    beforeRouteLeave (to, from, next) {
 
 
 ​	
 ​	    }
 ​	
-	</script>
+​	</script>
 
 
 

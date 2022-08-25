@@ -1,6 +1,4 @@
-# Redis
-
-## 安装
+# 安装
 
 * 去redis.io 下载redis.tar.gz
 
@@ -26,19 +24,19 @@
 
   
 
-  ### benchmark	
+  ## benchmark	
 
-  ![1](C:\Users\Administrator\Desktop\复习\素材\pic\redis\1.jpg)
+  ![1](..\素材\pic\redis\1.jpg)
 
-## 介绍
+# 介绍
 
 Redis 是一个开源（BSD许可）的，**内存**中的**数据结构存储**系统，它可以用作**数据库、缓存和消息中间件**。 它支持多种类型的数据结构，如 [字符串（strings）](http://redis.cn/topics/data-types-intro.html#strings)， [散列（hashes）](http://redis.cn/topics/data-types-intro.html#hashes)， [列表（lists）](http://redis.cn/topics/data-types-intro.html#lists)， [集合（sets）](http://redis.cn/topics/data-types-intro.html#sets)， [有序集合（sorted sets）](http://redis.cn/topics/data-types-intro.html#sorted-sets) 与范围查询， [bitmaps](http://redis.cn/topics/data-types-intro.html#bitmaps)， [hyperloglogs](http://redis.cn/topics/data-types-intro.html#hyperloglogs) 和 [地理空间（geospatial）](http://redis.cn/commands/geoadd.html) 索引半径查询。 Redis 内置了 [复制（replication）](http://redis.cn/topics/replication.html)，[LUA脚本（Lua scripting）](http://redis.cn/commands/eval.html)， [LRU驱动事件（LRU eviction）](http://redis.cn/topics/lru-cache.html)，[事务（transactions）](http://redis.cn/topics/transactions.html) 和不同级别的 [磁盘持久化（persistence）](http://redis.cn/topics/persistence.html)， 并通过 [Redis哨兵（Sentinel）](http://redis.cn/topics/sentinel.html)和自动 [分区（Cluster）](http://redis.cn/topics/cluster-tutorial.html)提供高可用性（high availability）。 
 
 **不区分大小写命令**
 
-![2](C:\Users\Administrator\Desktop\复习\素材\pic\redis\2.jpg)
+![2](..\素材\pic\redis\2.jpg)
 
-## 数据类型（基本）
+# 数据类型（基本）
 
 * Redis-key
 
@@ -190,14 +188,14 @@ Redis 是一个开源（BSD许可）的，**内存**中的**数据结构存储**
 
   
 
-## 三种特殊数据类型
+# 三种特殊数据类型
 
 * Bit arrays (or simply bitmaps): it is possible, using special commands, to handle String values like an array of bits: you can set and clear individual bits, count all the bits set to 1, find the first set or unset bit, and so forth.
 * HyperLogLogs: this is a probabilistic data structure which is used in order to estimate the cardinality(基数) of a set 
 * geospatial 
 * Streams: append-only collections of map-like entries that provide an abstract log data type. 
 
-## geospatial 地理位置
+# geospatial 地理位置
 
 > geoadd
 
@@ -231,7 +229,7 @@ geohash key member[member ...]
 
 
 
-## Hypeloglog 基数统计(不重复)
+# Hypeloglog 基数统计(不重复)
 
 集合中元素的个数叫基数 (刻画集合的大小)
 
@@ -253,7 +251,7 @@ pfmerge destkey sourcekey [sourcekey ...]
 
 **本质是一个set,但不能使用set的api**
 
-### BitMap位图 
+## BitMap位图 
 
 * setbit key offeset value
 
@@ -277,7 +275,7 @@ pfmerge destkey sourcekey [sourcekey ...]
 
 
 
-## 数据一致性
+# 数据一致性
 
 ![ ](.\Redis.assets\image-20220802102551766.png)
 
@@ -293,7 +291,7 @@ pfmerge destkey sourcekey [sourcekey ...]
 
 
 
-## 事务
+# 事务
 
 * **Redis单条命令保证原子性，但Redis事务不保证原子性**
 
@@ -321,7 +319,7 @@ pfmerge destkey sourcekey [sourcekey ...]
 
   如果执行过 [EXEC](https://www.redis.com.cn/commands/exec.html) 或`DISCARD`（会取消所有对 key 的监视 ），无需再执行 [UNWATCH](https://www.redis.com.cn/commands/unwatch.html) 
 
-## Redis.conf
+# Redis.conf
 
 
 
@@ -551,13 +549,13 @@ pfmerge destkey sourcekey [sourcekey ...]
 
         
 
-## Redis持久化(只做缓存不需要任何持久化)
+# Redis持久化(只做缓存不需要任何持久化)
 
 Redis内存数据库,断电即失,所以需要持久化
 
-### RDB（redis database）
+## RDB（redis database）
 
-![9](C:\Users\Administrator\Desktop\复习\素材\pic\redis\9.jpg)
+![9](..\素材\pic\redis\9.jpg)
 
 * 在指定的时间间隔内将内存中的数据集快照写入磁盘,也就是snapshot快照,恢复时将快照文件读到内存中
 
@@ -609,9 +607,9 @@ Redis内存数据库,断电即失,所以需要持久化
 
 
 
-### AOF(append only file)
+## AOF(append only file)
 
-<img src="C:\Users\Administrator\Desktop\复习\素材\pic\redis\8.jpg" alt="8" style="zoom:200%;" />
+<img src="..\素材\pic\redis\8.jpg" alt="8" style="zoom:200%;" />
 
 **将所有写命令记录下来 history ,恢复的时候就把这个文件再执行一遍**
 
@@ -639,7 +637,7 @@ rewrite 如果aof文件大于64mb，fork一个新的进程进行重写
 
 
 
-## Jedis
+# Jedis
 
 Redis官方推荐的java连接工具
 
@@ -741,7 +739,7 @@ maven导包会把它直接和间接依赖的都导入
 
 - 代码块 ctrl+alt+t
 
-### 测试
+## 测试
 
 - ```
   Jedis jedis = new Jedis("127.0.0.1", 6379);
@@ -771,7 +769,7 @@ maven导包会把它直接和间接依赖的都导入
           }
   ```
 
-## spingBoot整合
+# spingBoot整合
 
 spring data是和spring boot同级的项目，而不是其子项目
 
@@ -807,7 +805,7 @@ spring data是和spring boot同级的项目，而不是其子项目
 
 - 序列化器
 
-  ![2](C:\Users\Administrator\Desktop\复习\素材\pic\redis\2.png)
+  ![2](..\素材\pic\redis\2.png)
 
   - 1. 在保存数据时需要把java对象序列化为byte，在读取数据时需要把byte反序列化为java对象；
     2. 不同的java数据类型序列化和反序列化的逻辑不一样；
@@ -862,9 +860,9 @@ spring data是和spring boot同级的项目，而不是其子项目
 
    
 
-## 订阅发布
+# 订阅发布
 
-![10](C:\Users\Administrator\Desktop\复习\素材\pic\redis\10.jpg)
+![10](..\素材\pic\redis\10.jpg)
 
 * 命令
 
@@ -898,7 +896,7 @@ spring data是和spring boot同级的项目，而不是其子项目
 
   
 
-## 主从复制
+# 主从复制
 
 主从复制，是指将一台Redis服务器的数据，复制到其他的Redis服务器。前者称之为master 后者是slave
 
@@ -984,7 +982,7 @@ spring data是和spring boot同级的项目，而不是其子项目
 
 * 哨兵模式
 
-  哨兵是一个独立的进程，通过发送命令，等待Redis服务器响应，从而监控多个Redis实例![11](C:\Users\Administrator\Desktop\复习\素材\pic\redis\11.jpg)
+  哨兵是一个独立的进程，通过发送命令，等待Redis服务器响应，从而监控多个Redis实例![11](..\素材\pic\redis\11.jpg)
 
   假设matser宕机，哨兵1先检测到这个结果，系统并不会马上进行failover过程，仅仅认为哨兵1主观认为master不可用（**主观下线**）。当后面的哨兵也检测到了master不可用,**达到一定数量**后，那么哨兵之间会发起一次投票，并进行failover故障转移。切换成功后，通过发布订阅模式，让哨兵们把自己监控的从服务器实现切换主机，这个过程叫做**客观下线**
 
@@ -1054,102 +1052,104 @@ spring data是和spring boot同级的项目，而不是其子项目
 
    
 
-## 缓存穿透与雪崩
+# 缓存失效
 
-* 缓存穿透
+### 缓存穿透
 
-  用户想要查询一个数据，发现redis数据库没有（缓存未命中），向持久层数据库查询，如果也没有，于是本次查询失败，当用户量很多，缓存都没有命中，都会去请求持久层，这会对其造成很大的压力。
+用户想要查询一个数据，发现redis数据库没有（缓存未命中），向持久层数据库查询，如果也没有，于是本次查询失败，当用户量很多，缓存都没有命中，都会去请求持久层，这会对其造成很大的压力。
 
-  * 存储空对象
+**解决:**
 
-    ![12](C:\Users\Administrator\Desktop\复习\素材\pic\redis\12.jpg)
+1. 存储空对象
 
-    存在问题：
+![12](..\素材\pic\redis\12.jpg)
 
-    1. 需要更多的空间存储空键值对
-    2. 即使增加了过期时间，也会存在缓存层和持久曾一段时间窗口的数据不一致，对需要保证一致性的业务会造成影响
+存在问题：
 
-  * 布隆过滤器
+1. 需要更多的空间存储空键值对
+2. 即使增加了过期时间，也会存在缓存层和持久曾一段时间窗口的数据不一致，**对需要保证一致性的业务会造成影响**
 
-    ![13](C:\Users\Administrator\Desktop\复习\素材\pic\redis\13.jpg)
+2. 布隆过滤器
 
-    假设有这样一个场景：
+![13](..\素材\pic\redis\13.jpg)
 
-    原本有10亿个号码，现在又来了10万个号码，要快速准确判断这10万个号码是否在10亿个号码库中？ 
+假设有这样一个场景：
 
-    解决办法一：将10亿个号码存入数据库中，进行数据库查询，准确性有了，但是速度会比较慢。 
+原本有10亿个号码，现在又来了10万个号码，要快速准确判断这10万个号码是否在10亿个号码库中？ 
 
-    解决办法二：将10亿号码放入内存中，比如Redis缓存中，这里我们算一下占用内存大小：10亿*8字节=8GB，通过内存查询，准确性和速度都有了，但是大约8gb的内存空间，挺浪费内存空间的。 
+解决办法一：将10亿个号码存入数据库中，进行数据库查询，准确性有了，但是速度会比较慢。 
 
-    　那么对于类似这种，大数据量集合，如何准确快速的判断某个数据是否在大数据量集合中，并且不占用内存，**布隆过滤器**应运而生了。 
+解决办法二：将10亿号码放入内存中，比如Redis缓存中，这里我们算一下占用内存大小：10亿*8字节=8GB，通过内存查询，准确性和速度都有了，但是大约8gb的内存空间，挺浪费内存空间的。 
 
-    布隆过滤器：一种数据结构，是由一串很长的二进制向量组成，可以将其看成**一个二进制数组**。 
+　那么对于类似这种，大数据量集合，如何准确快速的判断某个数据是否在大数据量集合中，并且不占用内存，**布隆过滤器**应运而生了。 
 
-    当要向布隆过滤器中添加一个元素key时，我们通过多个hash函数，算出一个值 
+布隆过滤器：一种数据结构，是由一串很长的二进制向量组成，可以将其看成**一个二进制数组**。 
 
-    ![13](C:\Users\Administrator\Desktop\复习\素材\pic\redis\13.png)
+当要向布隆过滤器中添加一个元素key时，我们通过多个hash函数，算出一个值 
 
-    　　优点：优点很明显，二进制组成的数组，占用内存极少，并且插入和查询速度都足够快。
+![13](..\素材\pic\redis\13.png)
 
-    　　缺点：随着数据的增加，误判率会增加；还有**无法判断数据一定存在**(**能判断某个数据一定不存在**）；另外还有一个重要缺点，无法删除数据。
+　　优点：优点很明显，二进制组成的数组，占用内存极少，并且插入和查询速度都足够快。
 
-    实现：
+　　缺点：随着数据的增加，误判率会增加；还有**无法判断数据一定存在**(**能判断某个数据一定不存在**）；另外还有一个重要缺点，无法删除数据。
 
-    1. bitmap
+实现：
 
-       set k1 "big"
+1. bitmap
 
-       setbit k1 7 1
+   set k1 "big"
 
-       "b"的二进制表示为0110 0010，我们将第7位（从0开始）设置为1，那0110 0011 表示的就是字符“c”，所以最后的字符 “big”变成了“cig” 
+   setbit k1 7 1
 
-       getbit key offset
+   "b"的二进制表示为0110 0010，我们将第7位（从0开始）设置为1，那0110 0011 表示的就是字符“c”，所以最后的字符 “big”变成了“cig” 
 
-       <dependency>    <groupId>org.springframework.boot</groupId>    <artifactId>spring-boot-starter-data-redis</artifactId></dependency>
+   getbit key offset
 
-       ```
-       @Import({ LettuceConnectionConfiguration.class, JedisConnectionConfiguration.class })
-       RedisAutoConfiguration
-       
-       @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "lettuce", matchIfMissing = true)
-       LettuceConnectionConfiguration
-       
-       ```
+   <dependency>    <groupId>org.springframework.boot</groupId>    <artifactId>spring-boot-starter-data-redis</artifactId></dependency>
 
-       @Autowired时 泛型是计算在注入规则的（如有A<String> A<Object>会被认为是两个不同的类型而成功注入）
+   ```
+   @Import({ LettuceConnectionConfiguration.class, JedisConnectionConfiguration.class })
+   RedisAutoConfiguration
+   
+   @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "lettuce", matchIfMissing = true)
+   LettuceConnectionConfiguration
+   
+   ```
 
-       **字符串中全部位位0先普通表示一个字符串 再set 0**
+   @Autowired时 泛型是计算在注入规则的（如有A<String> A<Object>会被认为是两个不同的类型而成功注入）
 
-       \ ' "有特殊的含义 当我们想让它表示普通字符在前面加\ 如\\\
+   **字符串中全部位位0先普通表示一个字符串 再set 0**
 
-       ```
-        for (int i = 23; i >=0; i--) {
-                   redisTemplate.opsForValue().setBit("k1",i,false);
+   \ ' "有特殊的含义 当我们想让它表示普通字符在前面加\ 如\\\
+
+   ```
+    for (int i = 23; i >=0; i--) {
+               redisTemplate.opsForValue().setBit("k1",i,false);
+           }
+   
+           //随机加入一百万次
+           for (int i = 0; i < 1; i++) {
+               //假设有4个hash函数 随机生成0-23的hash值
+   //            boolean flag=true;
+               Integer[] rands=new Integer[4];
+               for (int j = 0; j < 4; j++) {
+                   int rand = new Random().nextInt(24);
+                   rands[j]=rand;
+                   System.out.println(rand);
                }
-       
-               //随机加入一百万次
-               for (int i = 0; i < 1; i++) {
-                   //假设有4个hash函数 随机生成0-23的hash值
-       //            boolean flag=true;
-                   Integer[] rands=new Integer[4];
-                   for (int j = 0; j < 4; j++) {
-                       int rand = new Random().nextInt(24);
-                       rands[j]=rand;
-                       System.out.println(rand);
+               for (int l = 0; l < rands.length; l++) {
+                   if(!redisTemplate.opsForValue().getBit("k1",rands[i])){
+                       Arrays.stream(rands).forEach(
+                               rand->redisTemplate.opsForValue()
+                                       .setBit("k1",rand,true));
+                       break;
                    }
-                   for (int l = 0; l < rands.length; l++) {
-                       if(!redisTemplate.opsForValue().getBit("k1",rands[i])){
-                           Arrays.stream(rands).forEach(
-                                   rand->redisTemplate.opsForValue()
-                                           .setBit("k1",rand,true));
-                           break;
-                       }
-                   }
-       ```
+               }
+   ```
 
-    2. redisson(jedit?)
+2. redisson(jedit?)
 
-    3. guava
+3. guava
 
 * 缓存击穿
 
