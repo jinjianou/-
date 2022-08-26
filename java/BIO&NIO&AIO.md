@@ -391,3 +391,495 @@ class ChatHandler implements Runnable{
 
 **面向对象**
 
+server
+
+```
+public class ChatServer {
+    private static final int DEFAULT_PORT=8090;
+    private static final String QUIT = "quit";
+    private ServerSocket serverSocket;
+    private Map<Integer,BufferedWriter> connectedClients;
+
+    public  ChatServer(){
+        connectedClients=new ConcurrentHashMap<>();
+    }
+
+    public void addClient(Socket socket){
+        if(socket!=null){
+            try {
+                int port=socket.getPort();
+                connectedClients.put(port,
+                        new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())));
+                System.out.println("[客户端] "+port+"已连接");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void removeClient(Socket socket) throws IOException {
+        if(socket!=null) {
+            int port=socket.getPort();
+            if(connectedClients.containsKey(port)){
+                connectedClients.get(port).close();
+            }
+            connectedClients.remove(port);
+            System.out.println("[客户端] " + port + "已断开连接");
+        }
+    }
+
+    //广播(除了本身)
+    public void forwardMessage(Socket socket,String msg) throws IOException {
+        int port=socket.getPort();
+        for (Map.Entry<Integer, BufferedWriter> entry : connectedClients.entrySet()) {
+            if(!Objects.equals(entry.getKey(),port)){
+                BufferedWriter writer = entry.getValue();
+                writer.write("客户端["+entry.getKey()+ "]: "+msg);
+                writer.newLine();
+                writer.flush();
+            }
+        }
+    }
+
+    public boolean readyToQuit(String msg){
+        return Objects.equals(msg.toLowerCase(), QUIT);
+    }
+
+    //启动服务器
+    public void start() throws IOException {
+        serverSocket=new ServerSocket(DEFAULT_PORT);
+        System.out.println("启动服务器,监听端口"+DEFAULT_PORT);
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+
+
+        try {
+            while (true) {
+                Socket socket = serverSocket.accept();
+
+                ChatHandler handler = new ChatHandler(this, socket);
+                threadPool.execute(handler);
+            }
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }finally {
+           if(serverSocket!=null){
+            serverSocket.close();
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        try {
+            ChatServer server = new ChatServer();
+            server.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+}
+class ChatHandler implements Runnable{
+    private ChatServer server;
+    private Socket socket;
+    private BufferedReader reader;
+
+    public ChatHandler(ChatServer server, Socket socket) {
+        this.server = server;
+        this.socket = socket;
+    }
+
+    private void close(){
+        if(reader!=null){
+            try {
+                reader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void run() {
+        try {
+            server.addClient(socket);
+            reader=new BufferedReader(
+                    new InputStreamReader(socket.getInputStream()));
+            String msg;
+            while ((msg=reader.readLine())!=null){
+                System.out.println("[客户端] "+socket.getPort()+" 发来消息: "+msg);
+
+                server.forwardMessage(socket,msg);
+                if (server.readyToQuit(msg)) break;
+            }
+            server.removeClient(socket);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            close();
+        }
+    }
+}
+```
+
+client
+
+```
+public class ChatClient {
+    private static final int PORT=8090;
+    private static final String IP="127.0.0.1";
+    private static final String QUIT = "quit";
+
+    private Socket socket;
+    private BufferedWriter writer;
+    private BufferedReader reader;
+
+
+    public void sendMessage(String msg) throws IOException {
+        if(!socket.isOutputShutdown()) {
+            writer.write(msg);
+            writer.newLine();
+            writer.flush();
+        }
+
+    }
+
+    public String receive() throws IOException {
+        String msg=null;
+        if(!socket.isInputShutdown()){
+            msg=reader.readLine();
+        }
+        return msg;
+    }
+
+    public void close(){
+        if(writer!=null){
+            try {
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public boolean readyToQuit(String msg){
+        return Objects.equals(msg.toLowerCase(), QUIT);
+    }
+
+    public void start() throws IOException {
+        try {
+            socket = new Socket(IP, PORT);
+            reader = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream()));
+            writer = new BufferedWriter(
+                    new OutputStreamWriter(socket.getOutputStream()));
+
+            new Thread(new UserInputhandler(this)).start();
+            //读取服务器转发的消息
+            String msg;
+            while ((msg=receive())!=null){
+                System.out.println(msg);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            close();
+            System.out.println("关闭socket");
+        }
+    }
+
+    public static void main(String[] args) {
+        ChatClient chatClient = new ChatClient();
+        try {
+            chatClient.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+}
+class UserInputhandler implements Runnable {
+    private ChatClient client;
+    private BufferedReader consoleReader;
+
+    public UserInputhandler(ChatClient client) {
+        this.client = client;
+    }
+
+    private void close(){
+        if(consoleReader!=null){
+            try {
+                consoleReader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void run() {
+        try {
+            consoleReader = new BufferedReader(
+                    new InputStreamReader(System.in));
+            String msg;
+            while ((msg = consoleReader.readLine()) != null) {
+               client.sendMessage(msg);
+               if (client.readyToQuit(msg)) break;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+           close();
+        }
+    }
+}
+```
+
+
+
+**缺陷**
+
+每一个client连入都需要分配一个线程,占据大量系统资源
+
+**线程池**  也就是
+
+![image-20220825091223756](assets/image-20220825091223756.png)
+
+
+
+# NIO
+
+**BIO堵塞之处**
+
+1. serverSocket.accept()
+
+2. inputstream.read/outputstream.write
+
+3. 无法在同一个线程里处理多个Stream I/O
+
+   多线程 
+
+   1. context swapping when threads num exceed cpu num
+   2. 系统资源
+
+
+
+**改进**
+
+1. 使用channel替代stream
+
+   **channel 双向且提供堵塞/非堵塞两种模式**
+
+2. 使用Selector监控多条channel
+
+3. 可以在一个线程里处理多个Channel I/O
+
+
+
+![image-20220825104347491](assets/image-20220825104347491.png)
+
+![image-20220825104407639](assets/image-20220825104407639.png)
+
+写了4个的数据
+
+![image-20220825104621673](assets/image-20220825104621673.png)
+
+**切换到读模式** 
+
+​	flip(翻动)切换指针 position->0 limit->3
+
+![image-20220825105319603](assets/image-20220825105319603.png)
+
+​	切换到读模式
+
+![image-20220825105357734](assets/image-20220825105357734.png)
+
+
+
+**切换到写模式**
+
+1. 之前读取了全部数据
+
+   clear()  positioon->0 limit-capacity
+
+   ![image-20220825105653713](assets/image-20220825105653713.png)
+
+   ![image-20220825105612294](assets/image-20220825105612294.png)
+
+   ![image-20220825105804590](assets/image-20220825105804590.png)
+
+2. 只读取了部分数据就切换
+
+   compact() 未读取的n个数据从0开始覆盖,position->n,
+
+   ​				limit->capacity
+
+   ![image-20220825105838202](assets/image-20220825105838202.png)
+
+![image-20220825110005107](assets/image-20220825110005107.png)
+
+![image-20220825110017349](assets/image-20220825110017349.png)
+
+
+
+
+
+## Channel
+
+![image-20220825110353074](assets/image-20220825110353074.png)
+
+![image-20220825110405607](assets/image-20220825110405607.png)
+
+
+
+## FileChannel
+
+```
+FileCopyRunner noBufferStreamCopy=new FileCopyRunner() {
+    @Override
+    public void copyFile(File source, File target) {
+        InputStream is=null;
+        OutputStream os=null;
+        try {
+            is=new FileInputStream(source);
+            os=new FileOutputStream(target);
+            int c;
+            while ((c=is.read())!=-1){
+                os.write(c);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            close(is);
+            close(os);
+        }
+    }
+};
+```
+
+```
+FileCopyRunner bufferedStreamCopy= new FileCopyRunner() {
+    @Override
+    public void copyFile(File source, File target) {
+        InputStream bis=null;
+        OutputStream bos=null;
+        try {
+            bis=new FileInputStream(source);
+            bos=new FileOutputStream(target);
+            byte[] data = new byte[1024];
+            int len;
+            while ((len=bis.read(data))!=-1){
+                bos.write(data,0,len);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            close(bis);
+            close(bos);
+        }
+    }
+};
+```
+
+```
+FileCopyRunner nioBufferCopy=new FileCopyRunner() {
+    @Override
+    public void copyFile(File source, File target) {
+        FileChannel fin=null;
+        FileChannel fout=null;
+        try {
+            fin=new FileInputStream(source).getChannel();
+            fout=new FileOutputStream(target).getChannel();
+            //get buffer
+            ByteBuffer buffer = ByteBuffer.allocate(1024);
+            // from fc to buffer
+            while (fin.read(buffer)!=-1){
+                // read -> write
+                buffer.flip();
+                //reading
+                while (buffer.hasRemaining()) { //ensure all read
+                    fout.write(buffer); // from buffer to fc
+                }
+                // write ->  read
+                buffer.clear();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            close(fin);
+            close(fout);
+        }
+    }
+};
+```
+
+```
+FileCopyRunner nioTransferCOpy=new FileCopyRunner() {
+    @Override
+    public void copyFile(File source, File target) {
+        FileChannel fin=null;
+        FileChannel fout=null;
+
+        try {
+            fin=new FileInputStream(source).getChannel();
+            fout=new FileOutputStream(target).getChannel();
+            long len=fin.size();
+            long transferred=0L;
+            //ensure all transfer
+            while (transferred!=len) {
+                transferred += fin.transferTo(0, len, fout);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            close(fin);
+            close(fout);
+        }
+    }
+};
+```
+
+
+
+benchmark 100 times copy
+
+```
+copy 1M file......
+elapse: 475872  8minute
+elapse: 805
+elapse: 1053
+elapse: 234
+
+copy 40M file......
+elapse: 41796
+elapse: 49285
+elapse: 6373
+
+
+```
+
+
+
+**推荐使用 	nioBufferCopy**
+
+## Selector
+
+![image-20220825151536922](assets/image-20220825151536922.png)
+
+**channel可操作的状态**
+
+![image-20220825151617377](assets/image-20220825151617377.png)
+
+
+
+**selector 选择 channel**
+
+![image-20220825152354582](assets/image-20220825152354582.png)
+
+
+
+## NIO编程模型
+
+![image-20220825155058218](assets/image-20220825155058218.png)
+
+ 
