@@ -1081,7 +1081,7 @@ spring data是和spring boot同级的项目，而不是其子项目
 
 解决办法二：将10亿号码放入内存中，比如Redis缓存中，这里我们算一下占用内存大小：10亿*8字节=8GB，通过内存查询，准确性和速度都有了，但是大约8gb的内存空间，挺浪费内存空间的。 
 
-　那么对于类似这种，大数据量集合，如何准确快速的判断某个数据是否在大数据量集合中，并且不占用内存，**布隆过滤器**应运而生了。 
+　那么对于类似这种，大数据量集合，如何**准确快速的判断某个数据是否在大数据量集合中，并且不占用内存**，**布隆过滤器**应运而生了。 
 
 布隆过滤器：一种数据结构，是由一串很长的二进制向量组成，可以将其看成**一个二进制数组**。 
 
@@ -1118,7 +1118,7 @@ spring data是和spring boot同级的项目，而不是其子项目
 
    @Autowired时 泛型是计算在注入规则的（如有A<String> A<Object>会被认为是两个不同的类型而成功注入）
 
-   **字符串中全部位位0先普通表示一个字符串 再set 0**
+   **字符串中全部位0先普通表示一个字符串 再set 0**
 
    \ ' "有特殊的含义 当我们想让它表示普通字符在前面加\ 如\\\
 
@@ -1147,25 +1147,65 @@ spring data是和spring boot同级的项目，而不是其子项目
                }
    ```
 
-2. redisson(jedit?)
+2. redisson
+
+   1.
+
+   **Jedis是Redis的Java实现的客户端**，其API提供了比较全面的Redis命令的支持；
+
+   **Redisson实现了分布式和可扩展的Java数据结构**，和Jedis相比，功能较为复杂，不仅支持字符串操作，且还支持排序、事务、管道、分区等Redis特性。
+
+   Redisson的宗旨是促进使用者对Redis的关注分离，从而让使用者能够将精力更集中地放在处理业务逻辑上。
+
+   
+
+   2.
+
+   Jedis中的方法调用是比较底层的暴露的Redis的API，也即Jedis中的Java方法基本和Redis的API保持着一致，了解Redis的API，也就能熟练的使用Jedis。
+
+   而Redisson中的方法则是进行比较高的抽象，每个方法调用可能进行了一个或多个Redis方法调用
+
+   
+
+   3.
+
+   Jedis使用同步阻塞的I/O,Jedis客户端实例不是线程安全的，所以需要通过连接池来使用Jedis(JedisPool,每个线程对应一个jedis实例，而不是一个jedis实例多个线程共享)
+
+   Redisson使用非阻塞的I/O和基于Netty框架的事件驱动的通信层，其方法调用是异步的。Redisson的API是线程安全的，所以可以操作单个Redisson连接来完成各种操作。
+
+   
+
+   > Thread safety is a **computer programming concept(观念) applicable to(适用于) multi-threaded code**. Thread-safe code only **manipulates shared data structures** in a manner that ensures that **all threads behave properly** and fulfill their **design specifications**(设计规范) without unintended interaction(意外互动). There are various strategies for making thread-safe data structures
+   >
+   > 简而言之, 就是这份代码在多线程环境中运行正常吗
+
+   4.
+
+   Jedis仅支持基本的数据类型如：[String、Hash、List、Set、Sorted Set](http://mp.weixin.qq.com/s?__biz=MzI3ODcxMzQzMw==&mid=2247490906&idx=2&sn=c5251f139de0ef65ed3f11d007906598&chksm=eb53986cdc24117abf2e1eb6b63e3514362f0f441d5f4e81595c0ef75fc2ca2c93692113391b&scene=21#wechat_redirect)。
+
+   Redisson不仅提供了一系列的分布式Java常用对象，基本可以与Java的基本数据结构通用。
+
+   还提供了许多分布式服务，其中包括（[BitSet, Set, Multimap, SortedSet, Map, List, Queue, BlockingQueue, Deque, BlockingDeque, Semaphore, Lock, AtomicLong, CountDownLatch, Publish / Subscribe, Bloom filter, Remote service, Spring cache, Executor service, Live Object service, Scheduler service](http://mp.weixin.qq.com/s?__biz=MzI3ODcxMzQzMw==&mid=2247490906&idx=2&sn=c5251f139de0ef65ed3f11d007906598&chksm=eb53986cdc24117abf2e1eb6b63e3514362f0f441d5f4e81595c0ef75fc2ca2c93692113391b&scene=21#wechat_redirect)）
+
+   
 
 3. guava
 
-* 缓存击穿
+## 缓存击穿
 
-  一个key非常热点，大并发集中的对这个点进行访问，当这个key在失效的失效的瞬间，继续大并发请求就会穿透缓存，直接请求数据库并写回缓存，瞬间压力过大
+一个key非常热点，大并发集中的对这个点进行访问，**当这个key在失效的失效的瞬间**，继续大并发请求就会穿透缓存，直接请求数据库并写回缓存，瞬间压力过大
 
-  解决方案：
+解决方案：
 
-  1. 设置热点不过期
+1. 设置热点不过期
 
-  2. 加互斥锁
+2. 加互斥锁
 
-     分布式锁：保证对每个key同时只有一个线程取查询后端服务，其他服务没有获取分布式锁的权限，只能等待
+   分布式锁：保证对每个key同时只有一个线程取查询后端服务，其他服务没有获取分布式锁的权限，只能等待
 
 * 缓存雪崩
 
-  某个时间段缓存集中过期失效（如Redis宕机）
+  **某个时间段缓存集中过期失效**（如Redis宕机）
 
   解决方案
 

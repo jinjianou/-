@@ -80,7 +80,11 @@ java1.7 AIO
 
 异步 **调用快速结束 结果需要处理后才能返回**
 
+
+
 堵塞 **调用过程中调用者需要等待一个事件的变化而处于某个状态中** ( 调用状态 )
+
+
 
 
 
@@ -883,3 +887,369 @@ elapse: 6373
 ![image-20220825155058218](assets/image-20220825155058218.png)
 
  
+
+**Server**
+
+```
+public class ChatServer {
+    private static final int DEFAULT_PORT=8090;
+    private static final String QUIT = "quit";
+    private static final Charset CHARSET= StandardCharsets.UTF_8;
+    private int port;
+
+
+    private static final int BUFFER=1024;
+    private ServerSocketChannel ssChanel;
+    private Selector selector;
+    private ByteBuffer rBuffer=ByteBuffer.allocate(BUFFER);
+    private ByteBuffer wBuffer=ByteBuffer.allocate(BUFFER);
+
+
+
+    public ChatServer(){
+        this(DEFAULT_PORT);
+    }
+
+    public ChatServer(int port){
+        this.port=port;
+    }
+
+    private void close(Closeable closeable){
+        if(closeable!=null){
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public boolean readyToQuit(String msg){
+        return Objects.equals(msg.toLowerCase(), QUIT);
+    }
+
+    public void start() throws IOException {
+        try {
+            ssChanel=ServerSocketChannel.open();
+            //默认true 堵塞
+            ssChanel.configureBlocking(false);
+            ssChanel.socket().bind(new InetSocketAddress(port));
+
+            selector = Selector.open();
+            //sschanel注册到channel & op
+            ssChanel.register(selector, SelectionKey.OP_ACCEPT);
+            System.out.println("启动服务器,监听端口"+port);
+            //有事件满足
+            while (true) {
+                selector.select();//堵塞
+                Set<SelectionKey> keys = selector.selectedKeys();
+                for (SelectionKey key : keys) {
+                    //处理的逻辑
+                    handle(key);
+                }
+                //防止下次继续消费
+                keys.clear();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            //关闭selector会同时将上面注册的channel关闭
+            close(selector);
+        }
+
+    }
+
+    private void handle(SelectionKey key) throws IOException {
+        //分成ServerSocketChannel#Accept SocketChannel#Read
+        if (key.isAcceptable()) {
+            //和客户端建立了连接
+            ServerSocketChannel server = (ServerSocketChannel) key.channel();
+            SocketChannel client = server.accept();
+            client.configureBlocking(false);
+            client.register(key.selector(),SelectionKey.OP_READ);
+            System.out.println(getClientName(client)+" 已连接");
+        }else if(key.isReadable()){
+            //客户端发送了消息
+            SocketChannel client = (SocketChannel) key.channel();
+            String fwdMsg=receive(client);
+            if(fwdMsg.isEmpty()){//客户端出现了问题
+                key.cancel();
+                selector.wakeup();//对多线程 select生效
+            }else{
+                System.out.println(getClientName(client)+": "+fwdMsg);
+                forward(client,fwdMsg);
+                if(readyToQuit(fwdMsg)){
+                    key.cancel();
+                    selector.wakeup();
+                    System.out.println(getClientName(client)+" 已断开");
+                }
+            }
+        }
+    }
+
+    private void forward(SocketChannel client, String fwdMsg) throws IOException {
+        //获取所有注册过selector的channel
+        // A key is valid upon creation and remains so until
+        //it is cancelled(key) / its channel is closed / its selector is closed
+        for (SelectionKey key : selector.keys()) {
+            SelectableChannel channel = key.channel();
+            //剔除server
+            if(channel instanceof ServerSocketChannel){
+                continue;
+            }
+            // key is valid && not itself
+            if(key.isValid()&&!Objects.equals(client,channel)){
+                wBuffer.clear();
+                //fulfill buffer;buffer->channel
+                wBuffer.put(CHARSET.encode(getClientName(client)+": "+fwdMsg));
+                wBuffer.flip();
+                while (wBuffer.hasRemaining()) {
+                    ((SocketChannel) channel).write(wBuffer);
+                }
+            }
+        }
+    }
+
+    private String receive(SocketChannel client) throws IOException {
+        rBuffer.clear();
+        while (client.read(rBuffer)>0);
+        rBuffer.flip();
+//        return new String(rBuffer.array(),CHARSET);
+        return String.valueOf(CHARSET.decode(rBuffer));
+    }
+
+    private String getClientName(SocketChannel client){
+        return "[客户端] "+client.socket().getPort();
+    }
+
+    public static void main(String[] args) {
+        try {
+            ChatServer server =  new ChatServer(7777);
+            server.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+}
+```
+
+
+
+**Client**
+
+```
+public class ChatClient {
+    private static final int DEFAULT_PORT=8888;
+    private static final String DEFAULT_HOST="127.0.0.1";
+    private static final String QUIT = "quit";
+    private static final Charset CHARSET= StandardCharsets.UTF_8;
+    private int port;
+    private String host;
+
+
+    private static final int BUFFER=1024;
+    private SocketChannel channel;
+    private Selector selector;
+    private ByteBuffer rBuffer=ByteBuffer.allocate(BUFFER);
+    private ByteBuffer wBuffer=ByteBuffer.allocate(BUFFER);
+
+    public ChatClient(){
+        this(DEFAULT_HOST,DEFAULT_PORT);
+    }
+
+    public ChatClient(String host,Integer port){
+        this.host=host;
+        this.port=port;
+    }
+
+
+    private void close(Closeable closeable){
+        if(closeable!=null){
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public boolean readyToQuit(String msg){
+        return Objects.equals(msg.toLowerCase(), QUIT);
+    }
+
+    public void start() throws IOException {
+        try {
+            channel = SocketChannel.open();
+            channel.configureBlocking(false);
+
+            selector=Selector.open();
+            channel.register(selector, SelectionKey.OP_CONNECT);
+            channel.connect(new InetSocketAddress(host,port));
+
+            while (true){
+                selector.select();
+                Set<SelectionKey> selectionKeys = selector.selectedKeys();
+                for (SelectionKey selectedKey : selectionKeys) {
+                    handle(selectedKey);
+                }
+                selectionKeys.clear();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            close(selector);
+            System.out.println("关闭socket");
+        }
+    }
+
+    private void handle(SelectionKey key) throws IOException {
+        SocketChannel client = (SocketChannel) key.channel();
+        //Connect事件
+        if(key.isConnectable() ){
+            //if true, a connection operation has been initiated on this channel but not yet completed
+            if(client.isConnectionPending()){
+                client.finishConnect();
+                //为了保证良好的用户体验,用户输入堵塞
+                new Thread(new UserInputhandler(this)).start();
+            }
+            client.register(selector,SelectionKey.OP_READ);
+        }else if(key.isReadable()) {//read事件-服务器发来信息
+            String msg=receive(client);
+            if(msg.isEmpty()){
+                close(selector);
+            }else{
+                System.out.println(msg);
+            }
+        }
+    }
+
+    public void send(String msg) throws IOException {
+        if(msg.isEmpty()) return;
+
+        wBuffer.clear();
+        wBuffer.put(CHARSET.encode(msg));
+        wBuffer.flip();
+        while (wBuffer.hasRemaining()){
+            channel.write(wBuffer);
+        }
+
+        if(readyToQuit(msg)){
+            close(selector);
+        }
+    }
+
+    private String receive(SocketChannel client) throws IOException {
+        rBuffer.clear();
+        while (client.read(rBuffer)>0);
+        rBuffer.flip();
+        return String.valueOf(CHARSET.decode(rBuffer));
+
+    }
+
+    public static void main(String[] args) {
+        ChatClient chatClient = new ChatClient("127.0.0.1",7777);
+        try {
+            chatClient.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+class UserInputhandler implements Runnable {
+
+    ChatClient client;
+    public UserInputhandler(ChatClient client) {
+        this.client = client;
+    }
+
+    @Override
+    public void run() {
+        try {
+            BufferedReader consoleReader
+                = new BufferedReader(new InputStreamReader(System.in));
+
+            while (true) {
+                String msg = consoleReader.readLine();
+                client.send(msg);
+                if(client.readyToQuit(msg)) break;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+}
+```
+
+
+
+问题1: SocketChannel.read()返回值
+
+>-1
+>
+>read返回-1说明**客户端的数据发送完毕，并且主动的close socket**。所以在这种场景下，（服务器程序）你需要关闭socketChannel并且取消key
+>
+>0
+>
+>其实read返回0有3种情况，一是某一时刻socketChannel中当前（注意是当前）没有数据可以读，这时会返回0，其次是bytebuffer的position等于limit了，即bytebuffer的remaining等于0，这个时候也会返回0，最后一种情况就是客户端的数据发送完毕了（**注意看后面的程序里有这样子的代码**），这个时候客户端想获取服务端的反馈调用了recv函数，若服务端继续read，这个时候就会返回0。
+
+
+
+问题2: ClosedSelectorException
+
+原因: 当发送msg=quit时,关闭了selector,是正常结束
+
+但此时会接收到server信息,触发了 read事件
+
+解决 catch ClosedSelectorException
+
+
+
+# 内核IO模型
+
+## **同步模型**
+
+![image-20220826162101966](assets/image-20220826162101966.png)
+
+![image-20220826162723812](assets/image-20220826162723812.png)
+
+注意: 内核的非堵塞I/O并不是NIO的Selector模型
+
+![image-20220826163323026](assets/image-20220826163323026.png)
+
+内核监听多个I/O,当有一个或多个IO状态发生变化,会通知应用程序.
+
+
+
+## 异步模型
+
+![image-20220826164752321](assets/image-20220826164752321.png)
+
+
+
+
+
+# AIO
+
+**异步操作**
+
+![image-20220826165732490](assets/image-20220826165732490.png)
+
+**异步操作实现**
+
+1. Future 对未来可能完成的任务的抽象
+
+   ![image-20220826165834709](assets/image-20220826165834709.png)
+
+2. CompletionHandler 基于Callback
+
+   ![image-20220826165919978](assets/image-20220826165919978.png)
+
+
+
+## 实现回音壁demo
+
+客户端发送给服务器的消息,服务器直接返回,从而循环
