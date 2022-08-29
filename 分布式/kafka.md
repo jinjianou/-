@@ -7,7 +7,7 @@
 		Advanced Message Queuing Protocol
 
 		提供统一消息服务的应用层标准高级消息队列协议\
-	
+		
 		rabbitmq是其中一个实现
 
 
@@ -311,20 +311,6 @@ Scala 是 Scalable Language 的简写，是一门多范式(范式/编程方式[�
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ## 常见脚本命令
 
 启动 
@@ -341,17 +327,71 @@ USAGE: ./bin/kafka-server-start.sh [-daemon] server.properties [--override prope
 
 
 
+## 集群部署
+
+1. 多台机器 
+
+   - jdk
+
+   - /etc/hosts 配置结点映射文件
+
+   - /etc/profile  ~/.bashrc 环境变量
+
+     **/etc/profile**： **此文件为系统的每个用户设置环境信息**,当用户第一次登录时,该文件被执行。是系统全局针对终端环境的设置，它是login时最先被系统加载的，是它调用了/etc/bashrc
+
+     **~/.bashrc**:**是用户相关的终端（shell）的环境设置**，通常打开一个新终端时，默认会load里面的设置，在这里的设置不影响其它人。
+
+     **/etc/bashrc**: 是**系统全局针对终端环境的设置**，修改了它，会影响所有用户的终端环境，这里一般配置终端**如何与用户进行交互的增强功能等**（比如sudo提示、命令找不到提示安装什么包等），新开的终端，已经load了这个配置，最后才load用户自己的 ~/.bashrc。
+
+- 时钟同步
+
+  > yum install -y ntp
+  >
+  > ntpdate cn.pool.ntp.org
+  >
+  > 或
+  >
+  > ntpdate ntp[1-7].aliyun.com  //选择一个时钟源 如ntp1
+  >
+  > clock -w
+
+- zookeeper
+
+  > zkServer.sh start
+
+- kafka 修改配置 config/server.properties
+
+> broker.id=0...n # 根据序列来
+>
+> listeners=PLAINTEXT://zk_node01:9092 #根据机器来
+>
+> log.dirs=/usr/kafka-logs
+>
+> zookeeper.connect=zk_node01:2181,zk_node02:2181,zk_node03:2181
+
+并拷贝到其他集群主机，并修改相应配置
+
+> mkdir -p /usr/kafka-logs
+
+> ./bin/kafka-server-start.sh config/server.properties
 
 
-# 基础API
 
-## topic操作
+## 单机操作
+
+### topic操作
 
 创建topic
 
-> ./bin/kafka-topics.sh --bootstrap-server zk_node01:9092 --create --topic topic01 --partitions 3 --replication-factor 1
+> ./bin/kafka-topics.sh --bootstrap-server zk_node01:9092 --create --topic topic01 --partitions 3 --replication-factor  1
 
-## 生产者/消费者代码
+查看topic(所有topic，而不是只是bootstrap-server的）
+
+> ./bin/kafka-topics.sh --bootstrap-server zk_node01:9092 --list
+
+
+
+### 生产者/消费者代码
 
 一个终端代表一个生产者/消费者
 
@@ -361,22 +401,536 @@ USAGE: ./bin/kafka-server-start.sh [-daemon] server.properties [--override prope
 
 生产者
 
->./bin/kafka-console-producer.sh 
->--broker-list zk_node01:9092 --topic topic01
+>./bin/kafka-console-producer.sh --broker-list zk_node01:9092 --topic topic01
 
 
+
+## 集群操作
+
+创建
+
+> ./bin/kafka-topics.sh --bootstrap-server zk_node01:9092,zk_node02:9092,zk_node03:9092 --create --topic topic02 --partitions 3 --replication-factor  2
+
+3分区*2副本[因子]/3主机=2分区/主机 
+
+![1661518031966](assets/1661518031966.png)
+
+
+
+查看特定分区
+
+> ./bin/kafka-topics.sh --bootstrap-server zk_node01:9092,zk_node02:9092,zk_node03:9092 --describe --topic topic02
+
+
+
+修改
+
+> ./bin/kafka-topics.sh --bootstrap-server zk_node01:9092,zk_node02:9092,zk_node03:9092 --alter --topic topic02 --partitions 2
+
+注意： 修改后的partitions要大于原有的
+
+
+
+删除
+
+> ./bin/kafka-topics.sh --bootstrap-server zk_node01:9092,zk_node02:9092,zk_node03:9092 --delete --topic topic02 
+
+
+
+消费者
+
+> ./bin/kafka-console-consumer.sh --bootstrap-server zk_node01:9092,zk_node02:9092,zk_node03:90 --group g1 --topic topic02 --property print.key=true --property print.value=true --property key.seperator=,
+
+生产者
+
+> ./bin/kafka-console-producer.sh --broker-list zk_node01:9092,zk_node02:9092,zk_node03:9092 --topic topic02
+>
+> ./bin/kafka-consumer-groups.sh --bootstrap-server zk_node01:9092,zk_node02:9092,zk_node03:9092 --list
+
+消费者群组
+
+> ./bin/kafka-consumer-groups.sh --bootstrap-server zk_node01:9092,zk_node02:9092,zk_node03:9092 --describe --group  g1
+
+**注意： 在任何部署了kafka的机器上都能执行上述命令**
+
+
+
+# 基础API
+
+```
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+      <version>2.2.0</version>
+    </dependency>
+<!--    log4j1-->
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.17</version>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.17</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.25</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.25</version>
+    </dependency>
+    <!--    log4j2 log4j-core(引入依赖log4j-api)  log4j-slf4j-impl-->
+    <!--    log4j2弃用了.properties方式，采用的是.xml，.json或者.jsn这种方式来做-->
+```
+
+```
+# INFO日志级别
+log4j.rootLogger=INFO,console
+# 输出到控制台
+log4j.appender.console=org.apache.log4j.ConsoleAppender
+# 设置输出样式
+log4j.appender.console.layout=org.apache.log4j.PatternLayout
+# 日志输出信息格式为
+log4j.appender.console.layout.ConversionPattern=%-d{yyyy-MM-dd HH:mm:ss}-%5p : %m%n
+```
+
+
+
+## Topic基本操作 DML管理
+
+```
+//1. 创建KafkaAdminClient
+Properties props = new Properties();
+//注意要将主机名和ip映射配置在hosts下
+props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG
+        ,"zk_node01:9092,zk_node02:9092,zk_node03:9092");
+KafkaAdminClient client = (KafkaAdminClient)KafkaAdminClient.create(props);
+//2. create topic
+client.createTopics(Collections.singletonList(
+        new NewTopic("topic03",3,(short) 2)));
+//3. list topics
+ListTopicsResult topicsResult = client.listTopics();
+System.out.println(topicsResult.names().get());
+client.close();
+```
+
+注意： createTopics是异步非堵塞的( KafkaFuture) topicsResult.names().get()无法获取新创建的topic
+
+ ```
+      //同步创建
+      CreateTopicsResult newTopicFuture = client.createTopics(Collections.singletonList(
+                new NewTopic("topic04", 3, (short) 2)));
+        newTopicFuture.all().get();
+ ```
+
+
+
+删除topic
+
+```
+client.deleteTopics(Collections.singletonList("topic04")).all().get();
+```
+
+
+
+查看topic详情
+
+```
+DescribeTopicsResult topic02 = client.describeTopics(Collections.singletonList("topic02"));
+Map<String, TopicDescription> descriptionMap = topic02.all().get();
+for (Map.Entry<String, TopicDescription> entry : descriptionMap.entrySet()) {
+    //key是topicName
+    System.out.println(entry.getKey()+": "+entry.getValue());
+}
+```
+
+## 生产者& 消费者 sub/assign
+
+**consumer**
+
+```
+ //1. create Consumer
+        Properties props=new Properties();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG
+                ,"zk_node01:9092,zk_node02:9092,zk_node03:9092");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG,"g1");
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(props);
+        //2. consume subscribe
+        consumer.subscribe(Pattern.compile("^topic.+"));
+        // iter
+        while (true){
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(1));
+            if(!records.isEmpty()){
+                for (ConsumerRecord<String, String> record : records) {
+                    String topic = record.topic();
+                    int partition = record.partition();
+                    long offset = record.offset();
+
+                    String key = record.key();
+                    String value = record.value();
+                    long timestamp = record.timestamp();
+                    System.out.println(topic+"\t"+partition+"\t"+offset+"\t"+key+"\t"+value+"\t"+timestamp);
+                }
+            }
+        }
+        //3. close
+//        consumer.close();
+```
+
+**producer**
+
+```
+//1.create producer
+Properties props=new Properties();
+props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG
+        ,"zk_node01:9092,zk_node02:9092,zk_node03:9092");
+props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+KafkaProducer<String,String> producer = new KafkaProducer<String,String>(props);
+
+//2.send msg
+for (int i = 0; i < 10; i++) {
+    ProducerRecord<String, String> record
+            = new ProducerRecord<String, String>("topic02","key-"+i,"value"+i);
+    producer.send(record);
+}
+
+//3. close producer
+producer.close();
+```
+
+## 自定义分区
+
+> consumer.subscribe  需要指定group，自动分配分区
+
+> consumer.assign 手动指定消费分区，失去组管理特性
+>
+> consumer.seek  offset
+
+```
+List<TopicPartition> partitions = Collections.singletonList(new TopicPartition("topic02", 2));
+consumer.assign(partitions);
+consumer.seek(partitions.get(0),2);
+```
+
+
+
+**默认分区策略**
+
+1. Record指定了分区
+2. Record未设置key则轮询放入partition
+3. 否则根据hash(key)%partition_size放置
+
+
+
+**自定义分区策略**
+
+```
+this.compareAndSwapInt(var1, var2, var5, var5 + var4)  if var2==var5   var1=var5 + var4
+```
+
+```
+props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG,ProducerPartitioner.class.getName());
+
+
+public class ProducerPartitioner implements Partitioner {
+    AtomicInteger counter = new AtomicInteger(0);
+    @Override
+    public int partition(String topic, Object key, byte[] keyBytes, Object value, byte[] valueBytes, Cluster cluster) {
+        List<PartitionInfo> partitions = cluster.partitionsForTopic(topic);
+        int numPartitions = partitions.size();
+
+        if (keyBytes == null) {
+            //round-robin fashion
+            return (counter.getAndIncrement() & Integer.MAX_VALUE) % numPartitions;
+        }else {
+            //hash
+            return Utils.toPositive(Utils.murmur2(keyBytes)) % numPartitions;
+        }
+    }
+    @Override
+    public void close() {
+        System.out.println("close");
+    }
+
+    @Override
+    public void configure(Map<String, ?> configs) {
+        System.out.println("configure");
+    }
+}
+
+```
 
 ## 消息的序列化
 
-## 自定义分区策略
+**自定义序列化器**
+
+```
+public class UserSerializer implements Serializer<User> {
+    private String encoding = "UTF8";
+    private static ObjectMapper objectMapper
+            =new ObjectMapper();
+
+    @Override
+    public void configure(Map<String, ?> configs, boolean isKey) {
+        String propertyName = isKey ? "key.serializer.encoding" : "value.serializer.encoding";
+        Object encodingValue = configs.get(propertyName);
+        if (encodingValue == null)
+            encodingValue = configs.get("serializer.encoding");
+        if (encodingValue instanceof String)
+            encoding = (String) encodingValue;
+    }
+
+    @Override
+    public byte[] serialize(String topic, User data) {
+        try {
+            if (data == null)
+                return null;
+            else{
+                String json = objectMapper.writeValueAsString(data);
+                return json.getBytes(encoding);
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw new SerializationException("Error when serializing string to byte[] due to unsupported encoding " + encoding);
+        }catch (Exception ex){
+            throw new SerializationException("Error when serializing  User Object" );
+        }
+    }
+
+}
+```
+
+```
+public class UserDeserializer implements Deserializer<User> {
+    private String encoding = "UTF8";
+    private static ObjectMapper objectMapper
+            =new ObjectMapper();
+
+    @Override
+    public void configure(Map<String, ?> configs, boolean isKey) {
+        String propertyName = isKey ? "key.deserializer.encoding" : "value.deserializer.encoding";
+        Object encodingValue = configs.get(propertyName);
+        if (encodingValue == null)
+            encodingValue = configs.get("deserializer.encoding");
+        if (encodingValue instanceof String)
+            encoding = (String) encodingValue;
+    }
+
+    @Override
+    public User deserialize(String topic, byte[] data) {
+        try {
+            if (data == null)
+                return null;
+            else
+                return objectMapper.readValue(data,User.class);
+        } catch (UnsupportedEncodingException e) {
+            throw new SerializationException("Error when deserializing byte[] to string due to unsupported encoding " + encoding);
+        }catch (Exception e){
+            throw new SerializationException("Error when deserializing byte[] to User obj ");
+        }
+    }
+```
+
+**java类需不需要实现Serializable接口？**
+
+> **转换成二进制字节流的形式**
+
+**这种需要序列化的类必须实现Serializable**。
+常见的例子：把对象存储在Redis服务器中、RPC形式的远程方法调用（微服务使用Dubbo）
+
+> **转换成JSON字符串的形式**
+
+**这种类就可以不需要实现Serializable了**
+常见的例子：后端暴露的接口返回的JSON格式对象、HTTP形式的远程方法调用（微服务使用的Feign）
+
+## 拦截器
+
+```
+public class UserDefineProducerInterceptor implements ProducerInterceptor {
+    //send方法的回调
+    @Override
+    public ProducerRecord onSend(ProducerRecord record) {
+        System.out.println("=========onSend=========");
+        User user = (User) (record.value());
+        user.setUsername(user.getUsername()+"+_jinjianou");
+        record=new ProducerRecord(record.topic(), record.key(),user);
+        return record;
+    }
+
+
+    //This method is called when the record sent to the server has been acknowledged, 
+    // or when sending the record fails before it gets sent to the server.
+    @Override
+    public void onAcknowledgement(RecordMetadata metadata, Exception exception) {
+        System.out.println("metadata="+metadata+", exception="+exception);
+    }
+
+    //最后执行且执行一次（interceptor.close后）
+    @Override
+    public void close() {
+        System.out.println("========close============");
+    }
+
+    //最先执行且执行一次
+    @Override
+    public void configure(Map<String, ?> configs) {
+        System.out.println("========configure============");
+    }
+}
+```
+
+```
+props.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,UserDefineProducerInterceptor.class.getName());
+```
+
+
+
+
 
 # API 高级特性
 
-## 消息拦截器
+## Offset自动控制
 
-## 偏移量控制
+1. Kafka消费者默认对于之前未订阅过该topic的消费者（**也就是系统中（consumer-group）并没有存储该消费者的这个消费分区的记录信息**），**基于此消费者默认的首次消费记录是latest**
 
-## 幂等性&事务控制
+
+
+> auto.offset.reset=latest
+>
+> earliest 最早的偏移量
+>
+> latest  默认，最新的偏移量（**消费者启动后，以当前各分区最新的偏移量开始计算**）
+>
+> none   throw exception to the consumer if **no previous offset is found for the** **consumer's group** 
+>
+> 
+
+对p0发送3条msg
+
+**latest** g1
+
+![1661683548428](assets/1661683548428.png)
+
+此时将g1 auto.offset.reset设置为earliest 并不会resetting offset（此时该消费者已经有了分区偏移量记录）
+
+**earliest  g2**
+
+![1661683785624](assets/1661683785624.png)
+
+
+
+在此之后，latest和earliset没有区别（此时g2中该消费者已经有了分区偏移量记录）
+
+2. **消费者在消费数据时默认会定期提交消费偏移量**
+
+   > enable.auto.commit=true
+   >
+   > auto.commit.interval.ms=5000  //**未达到时间间隔，服务关闭重启会重复消费消息**
+
+   如果用户需要自己管理offset的自动提交，enable.auto.commit=false
+
+  **由于offset是下一次消费者抓取数据的位置，用户提交的偏移量永远都要比本次消费的偏移量+1**
+
+```
+props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,false);
+...
+
+
+  Map<TopicPartition, OffsetAndMetadata> offsets=new HashMap<>();
+  ...
+offsets.put(new TopicPartition(topic,partition)
+                            ,new OffsetAndMetadata(offset+1));
+                    //异步非堵塞
+                    consumer.commitAsync(offsets,new OffsetCommitCallback(){
+                        @Override
+                        public void onComplete(Map<TopicPartition, OffsetAndMetadata> offsets, Exception exception) {
+                            System.out.println("offsets= "+offsets+"exception= "+exception);
+                        }
+                    });
+```
+
+
+
+## Acks和 Retries
+
+producer在发送完一个消息之后，要求broker在规定的时间内给与Ack应答，如果没有在规定时间内应答，producer会再额外尝试n次重新发送消息
+
+![1661707585668](assets/1661707585668.png)
+
+**Isr in-sync replica**
+
+如果producer在规定的时间内，没有得到bnorker的ack，就会开启retries机制
+
+> request.timeout.ms=3000 默认
+>
+> retries=Integer.MAX_VALUE 默认
+
+
+
+**测试**
+
+```
+props.put(ProducerConfig.ACKS_CONFIG,"all");
+props.put(ProducerConfig.RETRIES_CONFIG,3);
+props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG,1);
+```
+
+producer 发送1条消息，已经写入磁盘分区文件，但ack应答失败，retries3次
+
+![1661708258355](assets/1661708258355.png)
+
+consumer收到4条消息
+
+![1661708294667](assets/1661708294667.png)
+
+
+
+**问题**
+
+1. 重复写入记录     
+
+![1661706742761](assets/1661706742761.png)
+
+解决： 幂等性&事务
+
+
+
+## 幂等性
+
+![1661710099983](assets/1661710099983.png)
+
+
+
+![1661710071776](assets/1661710071776.png)
+
+
+
+**开启幂等后**
+
+成功+失败的一次过程	![1661710288113](assets/1661710288113.png)
+
+
+
+```
+props.put(ProducerConfig.ACKS_CONFIG,"all");
+props.put(ProducerConfig.RETRIES_CONFIG,3);
+props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG,1);
+
+props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG,true);
+//The maximum number of unacknowledged requests the client will send on a single connection before blocking.
+props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION,1);
+```
+
+## 事务控制
+
+
 
 # 架构进阶
 
