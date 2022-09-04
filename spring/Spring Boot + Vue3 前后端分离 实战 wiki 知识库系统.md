@@ -332,10 +332,109 @@ mybatis则不然
 
  
 
-### Vue3+Vue Cli项目搭建
+# Vue3+Vue Cli项目搭建
 
 Ant design of vue
 
 https://2x.antdv.com/docs/vue/introduce-cn/ 支持vue3
 
 https://element-plus.org/zh-CN/guide/quickstart.html  支持vue3
+
+
+
+问题： browser.js  localhost/:158  Unexpected token ':'
+
+解决： xx.env.js host: '"localhost"' 而不是 host: 'localhost' 
+
+
+
+问题：Invalid Host header
+
+解决： 通过服务器域名访问时是显示Invalid Host header，这是由于新版的webpack-dev-server出于安全考虑，默认检查hostname，如果hostname不是配置内的，将中断访问。可以在build目录中的webpack.dev.config.js中添加如下webpack-dev-server配置：devServer: {   disableHostCheck: true, }, 
+
+
+
+
+
+## 布局
+
+通过<el-container> 生成header- aside+main -footer
+
+将header/aside/footer抽取成公共页面（组件）
+
+```
+import Header from '@/components/common/Header.vue'
+import Nav from '@/components/common/Nav.vue'
+import Footer from '@/components/common/Footer.vue'
+  components: {
+    searchNav: Header,
+    sideNav: Nav,
+    footerNav: Footer
+  }
+```
+
+```
+<template>
+  <div>
+    <el-container>
+      <el-header>
+        <search-nav></search-nav>
+      </el-header>
+      <el-container>
+        <el-aside>
+          <keep-alive>
+            <side-nav></side-nav>
+          </keep-alive>
+        </el-aside>
+        <el-main>
+          main
+        </el-main>
+      </el-container>
+      <el-footer>
+        <footer-nav></footer-nav>
+      </el-footer>
+    </el-container>
+  </div>
+</template>
+
+```
+
+注意：
+
+1. component 取名不能是关键字 header footer等html已有标签
+
+2. keep-alive
+
+   keep-alive是Vue提供的一个抽象组件，用来对组件进行缓存，从而节省性能，由于是一个抽象组件，所以在v页面渲染完毕后不会被渲染成一个DOM元素 
+
+   当组件在keep-alive内被切换时组件的**activated、deactivated**这两个生命周期钩子函数会被执行 
+
+   被包裹在keep-alive中的组件的状态将会被保留，例如我们将某个列表类组件内容滑动到第100条位置，那么我们在切换到一个组件后再次切换回到该组件，该组件的位置状态依旧会保持在第100条列表处 
+
+   
+
+   通过用**keep-alive**结合**$route.meta**来选择性展示某些组件
+
+```
+{
+      path: '/index',
+      name: 'Index',
+      component: ()=>import('@/components/Index.vue'),
+      children:[{
+        path: 'testRouteMeta',
+        name: 'TestRouteMeta',
+        component: ()=>import('@/components/TestRouteMeta.vue'),
+        meta:{
+          keepAlive: false
+        },
+        }
+      ]
+    },
+    
+    
+index.vue
+...
+<router-view v-if="$route.meta.keepAlive"></router-view>
+```
+
+注意：1.  $route的当前路由 是/index/testRouteMeta 而不是 /index 2. keepAlive是固定属性
