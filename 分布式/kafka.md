@@ -930,17 +930,311 @@ props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION,1);
 
 ## 事务控制
 
+![1661811106858](assets/1661811106858.png)
 
+
+
+1. producer-only
+
+producer
+
+```
+        //1、开启幂等性（保证acks=all,tries=true）
+        props.put(ProducerConfig.ACKS_CONFIG,"all");
+        props.put(ProducerConfig.RETRIES_CONFIG,1);
+        props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG,true);
+        //2. transational.id
+        props.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG, UUID.randomUUID().toString());
+        //3. 批处理大小
+        props.put(ProducerConfig.BATCH_SIZE_CONFIG, 1024);
+        props.put(ProducerConfig.LINGER_MS_CONFIG,5);
+```
+
+```
+ try {
+            //0.init tx
+            producer.initTransactions();
+            //1.start tx
+            producer.beginTransaction();
+            for (int i = 40; i < 50; i++) {
+               if(i==38) {
+                    int j = 1 / 0;
+                }
+                ProducerRecord<String, User> record
+                        = new ProducerRecord<>("topic02","key-"+i,new User("user-"+i,i));
+                producer.send(record);
+                producer.flush();
+            }
+            //2.commit tx
+            producer.commitTransaction();
+        } catch (Exception e) {
+            e.printStackTrace();
+            //3.rollback tx
+            producer.abortTransaction();
+        } finally {
+            producer.close();
+        }
+    }
+```
+
+
+
+consumer
+
+```
+//default   read_uncommitted
+props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG,"read_committed"); 
+```
+
+
+
+2. ProducerAndConsumer
+
+ProducerAndConsumer 既是Producer也是Consumer，用来做数据流转（比如说接收到topic01的数据，发送到topic02）或者数据处理
+
+```
+public class ProducerAndConsumer {
+    private static KafkaProducer<String, String> producer=buildProducer();
+    private static KafkaConsumer<String, User> consumer=buildConsumer("g1");
+
+    //transfer data from topic02 sending to topic04
+    public static void main(String[] args) {
+        //accept data from topic02
+        consumer.subscribe(Collections.singletonList("topic02"));
+        producer.initTransactions();
+
+        while (true) {
+            ConsumerRecords<String, User> consumerRecords = consumer.poll(Duration.ofSeconds(1));
+            Map<TopicPartition, OffsetAndMetadata> offsets;
+            if(!consumerRecords.isEmpty()){
+                producer.beginTransaction();
+                offsets=new HashMap<>();
+                try {
+                    for (ConsumerRecord<String, User> consumerRecord : consumerRecords) {
+                        ProducerRecord<String, String> producerRecord = new ProducerRecord<>("topic04", consumerRecord.key(),
+                                consumerRecord.value() + " from topic02");
+                        offsets.put(new TopicPartition(consumerRecord.topic(),consumerRecord.partition()
+                        ),new OffsetAndMetadata(consumerRecord.offset()+1));
+                        producer.send(producerRecord);
+                        if(Math.random()<0.5){
+                            int j=1/0;
+                        }
+                    }
+                    producer.sendOffsetsToTransaction(offsets,"g1"); //提交消费者偏移量，保证消费的事务性
+                    producer.commitTransaction();
+                }  catch (Exception e) {
+                    e.printStackTrace();
+                    producer.abortTransaction();
+                } finally {
+//                    producer.close();
+                }
+            }
+        }
+    }
+
+
+    private static KafkaProducer<String, String> buildProducer(){
+        //create producer
+        Properties props=new Properties();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG
+                ,"zk_node01:9092,zk_node02:9092,zk_node03:9092");
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+        //1、开启幂等性（保证acks=all,tries=true）
+        props.put(ProducerConfig.ACKS_CONFIG,"all");
+        props.put(ProducerConfig.RETRIES_CONFIG,1);
+        props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG,true);
+        //2. transational.id
+        props.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG, UUID.randomUUID().toString());
+        //3. 批处理大小
+        props.put(ProducerConfig.BATCH_SIZE_CONFIG, 1024);
+        props.put(ProducerConfig.LINGER_MS_CONFIG,5);
+        return new KafkaProducer<String, String>(props);
+    }
+
+    private static KafkaConsumer<String, User> buildConsumer(String groupId){
+        //1. create Consumer
+        Properties props=new Properties();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG
+                ,"zk_node01:9092,zk_node02:9092,zk_node03:9092");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, UserDeserializer.class.getName());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG,groupId);
+        //default  read_uncommitted
+        props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG,"read_committed");
+        //必须关闭自动提交 手动提交处理后的数据
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,false);
+        return new KafkaConsumer<String, User>(props);
+    }
+}
+```
 
 # 架构进阶
 
 ## 数据同步机制
 
+![1662123601522](assets/1662123601522.png)
+
+![1662123667936](assets/1662123667936.png)
+
+
+
+问题1：
+
+![1662123734317](assets/1662123734317.png)
+
+假设有BrokerA,BrokerB（leader），a fetch b 数据更新到最新的m2，但还没来得及收到b的确认就宕机了。a 重启后发现HW=1会truncate m2，同时同步b，此时b宕机了，a变成leader 自此之后m2消息就丢失了。
+
+
+
+问题2：
+
+![1662125352315](assets/1662125352315.png)
+
+
+
+**解决**
+
+![1662125385295](assets/1662125385295.png)
+
+![1662180313050](assets/1662180313050.png)
+
+![1662181222742](assets/1662181222742.png)
+
+
+
+
+
+![1662181438697](assets/1662181438697.png)
+
+![1662181571895](assets/1662181571895.png)
+
 ## eagle 监控
+
+## 安装
+
+https://download.kafka-eagle.org/
+
+1. 将[kafka-eagle](https://download.kafka-eagle.org)-web.tar.gz解压缩到/usr
+2. 配置环境变量
+3. 修改 conf/xxx.properties
+
+
+
+**Skip video**
 
 ## Flume和kafka sink集成
 
+Flume is a distributed, reliable, and available service for efficiently collecting, aggregating, and moving **large amounts of log data**. It has a simple and flexible architecture based on streaming data flows. It is robust(健壮的) and fault tolerant with tunable（适配的） reliability mechanisms and many failover（故障转移） and recovery mechanisms. It uses a simple extensible data model that allows for online analytic application.
+
+ ![Agent component diagram](assets/DevGuide_image00.png) 
+
+
+
+Skip video
+
+
+
 ## sb集成kafaka
 
+```
+<dependency>
+    <groupId>org.springframework.kafka</groupId>
+    <artifactId>spring-kafka</artifactId>
+</dependency>
+```
+
+ ```
+spring.kafka.bootstrap-servers=zk_node01:9092,zk_node02:9092,zk_node03:9092
+
+spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer
+spring.kafka.producer.value-serializer=org.apache.kafka.common.serialization.StringSerializer
+spring.kafka.producer.acks=all
+spring.flyway.connect-retries=1
+#spring.kafka.producer.transaction-id-prefix=
+spring.kafka.producer.batch-size=1024
+spring.kafka.producer.properties.enable.idempotence=true
 
 
+spring.kafka.consumer.key-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+spring.kafka.consumer.value-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+spring.kafka.consumer.auto-offset-reset=earliest
+spring.kafka.consumer.group-id=g1
+spring.kafka.consumer.enable-auto-commit=true
+spring.kafka.consumer.auto-commit-interval=100
+spring.kafka.consumer.properties.isolation.level=read_committed
+ ```
+
+```
+@Component
+public class KafkaConsumer {
+   @KafkaListener(topics = {"topic04"})
+    public void receive(ConsumerRecord<String,String> record){
+        System.out.println("get record: "+record);
+    }
+}
+```
+
+## 案例
+
+1. 消费
+
+   **注意: 多个listener监听同一个topic，会均分partition**
+
+2. 发送
+
+```
+@KafkaListeners(value = {
+        @KafkaListener(topics = {"topic04"})
+})
+@SendTo({"topic02"})
+public String receive02(ConsumerRecord<String,String> record){
+    return record.value()+"\t"+"made by jinjianou";
+}
+```
+
+或者使用 KafkaTemplate
+
+```
+    @Autowired
+    private KafkaTemplate kafkaTemplate;
+    
+    public void send()
+    {
+        kafkaTemplate.send(new ProducerRecord("topic02","key","value"));
+    }
+```
+
+同时往往配合事务使用
+
+```
+spring.kafka.producer.transaction-id-prefix=
+```
+
+1.
+
+```
+kafkaTemplate.executeInTransaction(new KafkaOperations.OperationsCallback() {
+    @Override
+    public Object doInOperations(KafkaOperations kafkaOperations) {
+        kafkaOperations.send(new ProducerRecord("topic02","key","value"));
+        return null;
+    }
+});
+```
+
+2.
+
+```
+@Service
+@Transactional
+public class KafkaMessageSendService {
+    @Autowired
+    private KafkaTemplate<String,String> template;
+
+    public void send(String topic,String key,String message){
+        template.send(new ProducerRecord<>(topic,key,message));
+    }
+}
+```

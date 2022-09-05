@@ -91,3 +91,65 @@ position：absolute 绝对于浏览器窗口 （父元素非relative）绝对定
 relative 相对定位是相对于元素原来的位置控制，当元素发生位置偏移时，原位置留白
 
 父子效果相同 但一般用relative-absolute
+
+
+
+
+
+# 案例
+
+子元素相对于父元素垂直方向居中
+
+1. **子元素margin-top或父元素padding-top实现** 
+
+   多个子元素padding会有元素失效 如第一个元素padding-bottom失效，最后一个元素padding-top失效 
+
+2. **使用table方法** 
+
+   ```
+   parent{
+   			display: table-cell;
+   		    vertical-align: middle;
+   		    text-align: center;
+   		    width: 200px;
+   		    height: 200px;
+   		    background: #ccc;
+   		}
+   		child{
+   			background:red;
+   			width: 50px;
+   			display: inline-block;
+   		}
+   ```
+
+   使用 table-cell 时最好不要与 float 以及 position: absolute 一起使用，设置了 table-cell 的元素对高度和宽度高度敏感，对 margin 值无反应，可以响应 padding 的设置
+
+3. .使用定位position:absolute的方式
+
+4. **使用transform:translate方法** 
+
+   ![img](https://img-blog.csdnimg.cn/20210105163634612.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQxMTYxOTgy,size_16,color_FFFFFF,t_70) 
+
+   ```
+       child{
+               position: absolute;
+       top: 50%;
+       left: 50%;
+       transform: translate(-50%,-50%); //相对原位置向左 向上移动 child_size*0.5
+       }
+   
+   ```
+
+5. **使用flex布局的方法** 
+
+   ```
+   body{
+   			display: flex;
+   			justify-content:center; //同轴
+   			align-items:center;  //垂直轴
+   			height: 100vh;
+   		}
+   
+   ```
+
+   
