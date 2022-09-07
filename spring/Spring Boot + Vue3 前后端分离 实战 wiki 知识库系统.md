@@ -224,13 +224,13 @@ bootstrap.properties 用于动态配置，线上实时修改实时生效，一�
    	detatil_category_id int
    )engine=innodb,default charset=utf8,comment='线上教程';
    
-   insert into ebook(title,content_count,description)
-   values('JavaScript 入门教程',80,'零基础学习 Javascript'),
-   ('Vue 入门教程',39,'零基础入门 Vue 开发'),
-   ('TypeScript 入门教程',38,'使用 TypeScript 进行 OOP 编程'),
-   ('Html5 入门教程',25,'通向 WEB 技术世界的钥匙'),
-   ('Java 入门教程',50,'面向就业的最佳首选语言'),
-   ('Android 入门教程',59,'零基础 Android 入门，精华知识点提取');
+   insert into ebook(title,cover,content_count,description,big_category_id,detatil_category_id)
+   values('JavaScript 入门教程',"https://img.mukewang.com/wiki/5e785b4009607da700840084.jpg",80,'零基础学习 Javascript',1,1),
+   ('TypeScript 入门教程',"https://img.mukewang.com/wiki/5e81ab2a0906c4c700840084.jpg",38,'使用 TypeScript 进行 OOP 编程',1,1),
+   ('Vue 入门教程',"https://img.mukewang.com/wiki/5e7c50c8095ae83200840084.jpg",39,'零基础入门 Vue 开发',1,1),
+   ('Html5 入门教程',"https://img.mukewang.com/wiki/5f18ce7209ecd6a600840084.jpg",25,'通向 WEB 技术世界的钥匙',1,2),
+   ('Java 入门教程',"https://img.mukewang.com/wiki/5e9d1e730915fbd700840084.jpg",50,'面向就业的最佳首选语言',3,1),
+   ('Android 入门教程',"https://img.mukewang.com/wiki/5ec7b18d09bb96c000840084.jpg",59,'零基础 Android 入门，精华知识点提取',3,1);
    
    
    
@@ -438,3 +438,44 @@ index.vue
 ```
 
 注意：1.  $route的当前路由 是/index/testRouteMeta 而不是 /index 2. keepAlive是固定属性
+
+
+
+
+
+# 搭建过程中的问题
+
+1. java.sql.SQLNonTransientConnectionException: Public Key Retrieval is not allowed
+
+   允许客户端从服务器获取公钥  添加&allowPublicKeyRetrieval=true
+
+2. 我们在使用 element-ui 绘制页面时，有时候需要[重写](https://so.csdn.net/so/search?q=%E9%87%8D%E5%86%99&spm=1001.2101.3001.7020) element-ui 组件样式， 但会**发现直接重写会失效！！** 
+
+   原因在于 <style scoped> 收到这scoped 的影响 
+
+   因此我们如果要重写样式，需要在后面添加 **<style></style>** 标签,把要重写的样式写在里面。注意添加 **!important** 提高[优先级](https://so.csdn.net/so/search?q=%E4%BC%98%E5%85%88%E7%BA%A7&spm=1001.2101.3001.7020)不过**通过这个方法修改 element-ui 的样式是全局生效的** 	
+
+```
+ [外层] >>> 第三方组件 {
+ 
+      样式
+  }
+  如果不好设置自定义的class 如.el-card__body 可省略
+```
+
+3. 获取外网的图片
+
+   http请求头中有一个referrer字段，用来表示发起http请求的源地址信息 
+
+   服务器端在拿到这个referrer值后判断请求是否来自本站
+
+   若不是则返回403，从而实现图片的防盗链。上面出现403就是因为，请求的是别人服务器上的资源，但把自己的referrer信息带过去了，被对方服务器拦截返回了403
+
+   解决： 在index.html中的head中添加：
+
+   ```
+    <!-- 解决图片403防盗链问题 -->
+   <meta name="referrer" content="no-referrer" />
+   ```
+
+   在前端可以通过meta来设置referrer policy(来源策略)，referrer设置成`no-referrer`，发送请求不会带上referrer信息，对方服务器也就无法拦截了 。 

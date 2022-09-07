@@ -2378,10 +2378,14 @@ vue-cli中一切皆组件
 
    问题：You may use special comments to disable some warnings.
 
-   取消ESLint验证规则   webpack.base.conf.js  注释掉      ...(config.dev.useEslint ? [createLintingRule()] : []), 
+   取消ESLint验证规则   
+
+   vue2 webpack.base.conf.js  注释掉      ...(config.dev.useEslint ? [createLintingRule()] : []), 
+
+   vue3   在vue.config.js里面 把 lintOnSave设置为false
 
    **webstorm关闭eslint语法检查**: File-->Setting-->Languages&Frameworks-->Code Quality Tools-->ESLint 把Disable ESlint选项勾选上
-   
+
    
 
 ## 前端标准开发
@@ -2492,6 +2496,66 @@ file->preferences->user snippet 输入vue.json
 新建 xxx.vue  输入vue 回车或tab
 
 **注意：要保证文件格式是vue  可以通过 `configure file assocation to .vue`强制指定**
+
+
+
+## 多环境配置
+
+1. 增加开发和生产环境
+
+   vue2: [webpack-dev-server](https://github.com/webpack/webpack-dev-server)
+
+   dev.env.js
+
+   dev.env.js
+
+   **process.env nodejs的一个环境变量，保存着系统的环境的变量信息**
+
+   dev.env.js中配置的属性不在其中
+
+    
+
+   1. config>index.js   修改host和port属性
+
+   2.
+
+   ```
+   --env proprty=value 或 proprty
+   ```
+
+   
+
+   
+
+   vue3:
+
+   vue-cli-service   命令会启动一个开发服务器 (基于 [webpack-dev-server](https://github.com/webpack/webpack-dev-server)) 并附带开箱即用的模块热重载 (Hot-Module-Replacement) 
+
+   新建`.env.dev`
+
+   ```
+     NODE_ENV=development/test/production,
+   	VUE_APP_HOST='"http://www.haha2.com"',
+     VUE_APP_PORT=9090,
+   ```
+
+   如果环境文件内部不包含 `NODE_ENV` 变量，它的值将取决于模式 
+
+   vue-cli-service  --mode dev
+
+   
+
+2. 增加编译和启动支持多环境
+
+   package.json  > scripts
+
+   > "prod": "webpack-dev-server --inline --progress --config build/webpack.prod.conf.js", 
+
+3. 修改axios请求地址支持多环境
+
+
+
+
 
 
 
@@ -3381,3 +3445,524 @@ export default new Vuex.Store({
     不会解析代码 而是直接显示代码文本
 
   
+
+
+
+
+
+# Vue2升Vue3
+
+**为什么**
+
+1. Vue3性能更好
+2. 未来趋势  
+
+
+
+## Vite
+
+**基于原生 ES-Module 的前端构建工具** 
+
+在浏览器支持 ES 模块之前，JavaScript 并没有提供原生机制让开发者以模块化的方式进行开发。这也正是我们对 “打包” 这个概念熟悉的原因：使用工具抓取、处理并将我们的源码模块串联成可以在浏览器中运行的文件。 
+
+时过境迁，我们见证了诸如 [webpack](https://webpack.js.org/)、[Rollup](https://rollupjs.org/) 和 [Parcel](https://parceljs.org/) 等工具的变迁
+
+然而，当我们开始构建越来越大型的应用时，需要处理的 JavaScript 代码量也呈指数级增长。包含数千个模块的大型项目相当普遍。基于 JavaScript 开发的工具就会开始遇到性能瓶颈：通常需要很长时间（甚至是几分钟！）才能**启动开发服务器**，即使使用**模块热替换**（HMR），文件修改后的效果也需要几秒钟才能在浏览器中反映出来。 
+
+
+
+
+
+## 安装
+
+1. ```
+   npm install -g @vue/cli
+   
+   vue create my-project
+   # OR
+   vue ui
+   ```
+
+> vue -V
+
+> npm update -g @vue/cli 
+
+如果之前安装过vue2 需要把仓库里的vue/vue.cmd/vue.ps1等先删除再更新
+
+> npm list vue 查看vue版本 （进项目查看具体的项目）
+
++-- @vue/cli@5.0.8 extraneous
+| `-- vue@2.7.10 extraneous
+`-- vuex@3.6.2 extraneous
+  `-- vue@2.7.4 extraneous
+
+
+
+
+
+问题： Vue UI # Error: NO_MODULES
+    at importProject (E:\npmRepo\node_modules\@vue\cli\node_modules\@vue\cli-ui\apollo-server\connectors\projects.js:372:11)
+
+解决： npm i core-js -g 
+
+​	     npm cache clean --force 
+
+​	     **必须保证npmRepo的环境变量已经配置，否则context为空**
+
+
+
+
+
+
+
+## Composite Api
+
+```
+<script setup>
+import { reactive, ref } from 'vue'
+
+
+//此时 this为undefiend
+
+//msg
+const msg = ref("vue3 data");
+const changeMsg = () => {
+  msg.value = "vue3 data2";  
+}
+
+//obj.msg
+const objMsg = reactive({
+  msg: 'vue3 obj data',
+})
+const changeObjMsg = () => {
+  objMsg.msg = "vue3 obj data2"; //注意msg不需要带value
+}
+</script>
+```
+
+1.
+
+Vue2     new Vue({}).mount('#app') 
+
+Vue3     createApp(App).mount('#app') 
+
+导致了this的更改
+
+
+
+2.
+
+对象可以用 ref
+
+```
+objMsg.value.msg = xxx
+```
+
+
+
+
+
+## Router不同
+
+**router/index.js**
+
+vu2
+
+```
+import VueRouter from 'vue-router'
+
+const router=new VueRouter({
+    mode: "history",
+    routes
+})
+```
+
+
+
+
+
+vue3
+
+```
+import { createRouter, createWebHistory } from 'vue-router'
+
+const router = createRouter({
+  history: createWebHistory(process.env.BASE_URL),  //取消#模式
+  routes
+})
+```
+
+
+
+
+
+**main.js**
+
+vue2
+
+```
+new Vue({
+    router
+    ....
+}).mount('#app')
+```
+
+
+
+vue3
+
+```
+createApp(App).use(store).use(router).mount('#app')
+```
+
+
+
+使用
+
+vue2
+
+```
+console.log("当前路由：", this.$route.path);
+console.log("过5s后转到主页");
+setTimeout(() => {
+  this.$router.push("/");
+}, 5000);
+```
+
+
+
+vue3
+
+```
+import { useRouter, useRoute } from 'vue-router'
+
+const router=useRouter();   //等价于 this.$router
+const route=useRoute();  //等价于 this.$route
+
+console.log("当前路由：", route.path);
+console.log("过5s后转到主页");
+setTimeout(() => {
+  router.push("/");
+}, 5000);
+
+```
+
+
+
+
+
+## 定义全局方法和变量
+
+Vue2
+
+```
+import  Vue  from 'vue'
+const Utils={
+	isEmpty:(val)=>{
+		if(val==undefined||val.trim()==''){
+			return false;
+		}
+		return true;
+	}
+}
+Vue.prototype.Utils=Utils;
+
+let testText = "test"
+console.log(this.Utils.isEmpty(testText));
+```
+
+**注意  vue3中Vue为undefined**
+
+
+
+Vue3
+
+```
+const Utils={
+	isEmpty:(val)=>{
+		if(val==undefined||val.trim()==''){
+			return false;
+		}
+		return true;
+	}
+}
+app.config.globalProperties.Utils=Utils;
+
+import { getCurrentInstance } from 'vue'
+const { proxy } = getCurrentInstance(); //获得vue实例的代理对象
+let testText = "test"
+console.log(proxy.Utils.isEmpty(testText));
+```
+
+
+
+
+
+## Watch
+
+Vue2
+
+```
+ watch: {
+    msg: {
+      immediate: true, //instant  页面初始化的时候就开始监听
+      deep: true,
+      handler: (newVal, oldVal) => {
+        console.log("oldVal: ", oldVal, "newVal: ", newVal);
+      }
+    }
+  }
+```
+
+
+
+Vue3
+
+```
+const msg = ref("vue3 data");
+const changeMsg = () => {
+  msg.value = "vue3 data2";
+}
+import { watch } from 'vue'
+
+watch(msg,
+  (newVal, oldVal) => {
+    console.log("oldVal: ", oldVal, "newVal: ", newVal);
+  },
+  { immediate: true, deep: true },
+)
+```
+
+
+
+
+
+## 父子组件调用
+
+Vue2
+
+```
+父->子 
+	数据 v-bind+props 
+	方法 
+	parent: @child-method='parent-method'
+	child: this.$emit(child-method,options)
+子->父
+	方法  this.$ref
+	son: 
+		methods:{
+            a(x);
+		}
+	parent:
+		<Son ref="sonRef"></son>
+		methods:{
+            opSon(){
+                this.$refs.sonRef.a("xxx");
+            }
+		}
+```
+
+
+
+Vue3
+
+```
+1. 子调用父数据
+parent
+
+<template>
+  <div>
+    <Son :msg="ParentMsg"></Son>
+  </div>
+</template>
+
+<script setup>
+import Son from './Son.vue'
+import { ref } from 'vue'
+
+const ParentMsg = ref("parent msg");
+
+</script>
+
+son
+
+<template>
+  <div style="border: red solid 1px;width:500px">
+    {{msg}}
+  </div>
+</template>
+
+<script setup>
+const props = defineProps({
+  msg: {
+    type: String,
+    default: "",
+  }
+});
+</script>
+	
+```
+
+
+
+```
+2. 子调用父方法
+parent
+    <Son :msg="ParentMsg"
+         @son-method="prentMethod"></Son>
+         
+        const prentMethod = (option) => {
+  console.log(option);
+  return option + " from parent";
+} 
+         
+son
+<button @click="changeMsg">callParentMethod</button>
+
+const parentMethodCb = ref("xxxx");
+const emit = defineEmits();
+const changeMsg = () => {
+  parentMethodCb.value = emit("sonMethod", "call method"); //emit returns undefined
+}
+
+```
+
+注意：不能通过调父组件的返回值更改自子组件  emit returns undefined
+
+```
+parent
+    <Son :msg="ParentMsg"
+         @son-method="prentMethod"></Son>
+             <div>{{parentMethodCb}}</div>
+         
+         const parentMethodCb = ref("xxxx");
+        const prentMethod = (option) => {
+  console.log(option);
+  return option + " from parent";
+} 
+         
+son
+<button @click="changeMsg">callParentMethod</button>
+
+const emit = defineEmits();
+const changeMsg = () => {
+  emit("sonMethod", "call method"); //emit returns undefined
+}
+```
+
+
+
+
+
+```
+3. 父调用子方法
+son
+ <div>父组件调用子组件传递参数 {{msg2}}</div>
+ 
+ const msg2 = ref("msg2");
+const changeMsg2 = (msg) => {
+  msg2.value = msg;
+}
+defineExpose({
+  changeMsg2
+}); //必须导出才能生效
+
+parent
+  <Son :msg="ParentMsg"
+         ref="sonRef"></Son>
+    <button @click="changeSonMsg2">changeSonMsg2</button>
+    
+  const sonRef = ref() //与子组件ref同名
+const changeSonMsg2 = () => {
+  sonRef.value.changeMsg2("call son methods");
+}  
+
+
+```
+
+
+
+
+
+
+
+## 生命周期函数
+
+
+
+Vue3
+
+```
+init <- beforeCreate created
+onBeforeMount/onMounted <- beforeMount  mounted
+onBeforeUpdate/onUpdated <- beforeUpdate  updated
+onBeforeUnmount/onUnmounted<- beforeDestory  destoryed
+```
+
+ ```
+import { onBeforeMount, onMounted, onBeforeUpdate, onUpdated, onBeforeUnmount, onUnmounted } from 'vue'
+const init = () => {
+  console.log("this is init");
+}
+init();
+
+onBeforeMount(() => { console.log("onBeforeMount"); });
+onMounted(() => { console.log("onMounted"); });
+onBeforeUpdate(() => { console.log("onBeforeUpdate"); });
+onUpdated(() => { console.log("onUpdated"); });
+onBeforeUnmount(() => { console.log("onBeforeUnMount"); });
+onUnmounted(() => { console.log("onUnMounted"); });
+ ```
+
+
+
+## Vuex 状态管理
+
+Vue2
+
+```
+npm install vuex@3 --save 
+```
+
+
+
+Vue3
+
+```
+npm install vuex --save 
+
+import { createStore } from 'vuex'
+export default createStore({
+  state: {
+  },
+  getters: {
+  },
+  mutations: {
+  },
+  actions: {
+  },
+  modules: {
+  }
+})
+
+import store from './store'
+app.use(store)
+
+
+<template>
+  <div>
+    <div>{{store.state.num}}</div>
+    <button @click="addNum">num++</button>
+  </div>
+</template>
+
+<script setup>
+import { useStore } from 'vuex';
+const store = useStore();
+
+const addNum = () => {
+  store.commit("addNum", 2);
+}
+</script>
+```
+
