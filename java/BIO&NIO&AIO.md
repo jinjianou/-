@@ -1252,4 +1252,185 @@ class UserInputhandler implements Runnable {
 
 ## 实现回音壁demo
 
-客户端发送给服务器的消息,服务器直接返回,从而循环
+客户端发送给服务器的消息,服务器直接返回,客户端接收,以此类推.
+
+**Server**
+
+```
+public class Server {
+    private static final String HOST="127.0.0.1";
+    private static final int DEFAULT_PORT=8090;
+    private AsynchronousServerSocketChannel serverChannel;
+
+    private void close(Closeable closeable){
+        if(closeable!=null){
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void start() {
+        try {
+            //绑定端口
+            //AsynchronousChannelGroup 包含共享系统资源(如 线程池)
+            //未指定,默认系统级所有异步通道共享的AsynchronousGroup
+            serverChannel=AsynchronousServerSocketChannel.open();
+            serverChannel.bind(new InetSocketAddress(HOST,DEFAULT_PORT));
+            System.out.println("启动服务器,监听端口 "+DEFAULT_PORT);
+
+            //监听消息
+            AcceptHandler acceptHandler = new AcceptHandler();
+            while (true) {
+                serverChannel.accept(null, acceptHandler);
+                System.in.read(); //防止频繁调用accept
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            close(serverChannel);
+        }
+    }
+
+    //K result V super attachment_clazz
+   private class AcceptHandler implements
+            CompletionHandler<AsynchronousSocketChannel,Object>{
+
+        @Override
+        public void completed(AsynchronousSocketChannel result, Object attachment) {
+            //持续接受client发来消息
+            if(serverChannel.isOpen()){
+                serverChannel.accept(null,this);
+            }
+            AsynchronousSocketChannel client = result;
+            if(client!=null && client.isOpen()){
+                ClientHandler clientHandler = new ClientHandler(client);
+
+                //复制client channel数据
+                ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+                Map<String,Object> props=new HashMap<>();
+                props.put("type","read");
+                props.put("buffer",byteBuffer);
+                client.read(byteBuffer,props,clientHandler);
+            }
+        }
+
+        @Override
+        public void failed(Throwable exc, Object attachment) {
+
+        }
+    }
+
+    //既处理读操作,也处理写操作
+    private class ClientHandler implements
+            CompletionHandler<Integer,Map<String,Object>>{
+        private AsynchronousSocketChannel client;
+
+        public ClientHandler(AsynchronousSocketChannel client) {
+            this.client = client;
+        }
+
+        @Override
+        public void completed(Integer result, Map<String, Object> attachment) {
+            String type = String.valueOf(attachment.get("type"));
+            ByteBuffer buffer=(ByteBuffer)attachment.get("buffer");
+            //写回server读到的数据
+            if(Objects.equals(type,"read")){
+                System.out.println("读取client: "+new String(buffer.array()));
+                attachment.put("type","write");
+                buffer.flip();
+                client.write(buffer,attachment,this);
+            }else if(Objects.equals(type,"write")){
+                System.out.println("写入client: "+new String(buffer.array()));
+                ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+                Map<String,Object> props=new HashMap<>();
+                props.put("type","read");
+                props.put("buffer",byteBuffer);
+                client.read(byteBuffer,props,this);
+            }
+        }
+
+        @Override
+        public void failed(Throwable exc, Map<String, Object> attachment) {
+
+        }
+    }
+
+    public static void main(String[] args) {
+        Server server = new Server();
+        server.start();
+    }
+}
+```
+
+**client**
+
+```
+public class Client {
+    private static final String HOST="127.0.0.1";
+    private static final int DEFAULT_PORT=8090;
+
+    private void close(Closeable closeable){
+        if(closeable!=null){
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void start() {
+        AsynchronousSocketChannel clientChannel=null;
+        try {
+             clientChannel = AsynchronousSocketChannel.open();
+            Future<Void> connFuture = clientChannel.connect(new InetSocketAddress(HOST, DEFAULT_PORT));
+            connFuture.get();
+            System.out.println("客户端已连接到server");
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            while (true){
+                String input = reader.readLine();
+                byte[] bytes = input.getBytes();
+                ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                Future<Integer> wFuture = clientChannel.write(buffer);
+                wFuture.get();
+                System.out.println("client写入: "+new String(buffer.array()));
+                buffer.clear();
+
+                Future<Integer> rFuture = clientChannel.read(buffer);
+                rFuture.get();
+                System.out.println("client读取: "+new String(buffer.array()));
+            }
+        } catch (IOException |InterruptedException|ExecutionException e) {
+            e.printStackTrace();
+        } finally {
+            close(clientChannel);
+        }
+    }
+
+    public static void main(String[] args) {
+        Client client = new Client();
+        client.start();
+    }
+}
+```
+
+**注意: **
+
+**1. attachment是读写操作后才会携带给Callback**
+
+2. System.in.read() 堵塞掉main线程,每个client accept会调用一个新的异步线程
+
+扩展1: 实现无限反弹
+
+## AIO模型
+
+![image-20220829154925809](assets/image-20220829154925809.png)
+
+
+
+
+
