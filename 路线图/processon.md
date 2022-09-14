@@ -70,7 +70,7 @@ p5: https://www.processon.com/view/link/62246a886376895389217f88#map
    		每个盒子都会换行
 
    		width和height属性可以发挥作用
-	
+		
    		如h1 p 自然文本
 
    - inline-box
@@ -78,7 +78,7 @@ p5: https://www.processon.com/view/link/62246a886376895389217f88#map
    		每个盒子不会换行
 
    		width和height属性不会发挥作用
-	
+		
    		如span display:inline-block 自然文本
    
    **inline-block**
@@ -161,6 +161,107 @@ align-items:flex-end  默认的值是 stretch
 排序
 
 ​	order:1  越大越靠后 默认0
+
+
+
+**flex-grow：代表子元素占弹性盒的比例**
+
+```
+<div class="grow">
+      <!-- flex-grow占用父元素的比例 -->
+      <div class="grow-child1">flex-grow: 2</div>
+      <div class="grow-child2">flex-grow: 6</div>
+    </div>
+
+.grow {
+  width: 800px;
+  height: 200px;
+  background-color: aqua;
+  display: flex;
+}
+.grow-child1 {
+  flex-grow: 2;
+  background-color: red;
+}
+.grow-child2 {
+  flex-grow: 6;
+  background-color: royalblue;
+}
+```
+
+红蓝比例依次为800*2/(2+6)=200px  同理 600px
+
+
+
+**flex-basis：flex-basis当前子弹性盒的尺寸**
+
+```
+ <div class="basis">
+      <div class="basis-child1">basis-child1</div>
+      <div class="basis-child2">basis-child2</div>
+    </div>
+    <hr />
+ 
+/* css部分 */
+.basis {
+  width: 800px;
+  height: 200px;
+  background-color: aqua;
+  display: flex;
+}
+.basis-child1 {
+  flex-basis: 80%;
+  background-color: red;
+}
+.basis-child2 {
+  width: 100px;
+  background-color: royalblue;
+}
+
+```
+
+child1 800*80%=640px  也就是basis还有60px的空间没填充
+
+
+
+**flex:1**
+
+**自动填充满剩余空间**，如果有两个地方设置了flex，按着**flex-grow的规则分配剩余空间**
+
+**同一个元素flex：1优先于width属性生效**
+
+```
+<div class="flex">
+  <div class="flex-child1">flex-child1</div>
+  <div class="flex-child2">flex-child3</div>
+  <div class="flex-child3">flex-child3</div>
+</div>
+
+<style>
+  /* css部分 */
+  .flex {
+    width: 800px;
+    height: 200px;
+    background-color: aqua;
+    display: flex;
+  }
+  .flex-child1 {
+    flex: 1;
+    background-color: red;
+  }
+  .flex-child2 {
+    flex: 2;
+    /* width: 100px; */
+    background-color: royalblue;
+  }
+  .flex-child3 {
+    width: 200px;
+    background-color: sandybrown;
+  }
+</style>
+```
+
+child1和child2按比例瓜分剩余800-200=600空间
 
 
 

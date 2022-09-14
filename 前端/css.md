@@ -98,7 +98,7 @@ relative 相对定位是相对于元素原来的位置控制，当元素发生�
 
 # 案例
 
-子元素相对于父元素垂直方向居中
+## 子元素相对于父元素垂直方向居中
 
 1. **子元素margin-top或父元素padding-top实现** 
 
@@ -152,4 +152,15 @@ relative 相对定位是相对于元素原来的位置控制，当元素发生�
    
    ```
 
-   
+
+
+
+
+
+## inline-block
+
+display: inline-block;
+
+可以让多个block元素可以同排一行.
+
+**注意: 每一个block元素都需要设置inline-block**
