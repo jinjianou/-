@@ -1133,16 +1133,19 @@ select t3.* from (
 
 ## 创建
   1.会话特有的临时表
-  CREATE GLOBAL TEMPORARY <TABLE_NAME> (<column specification>)
+  CREATE GLOBAL TEMPORARY Table <TABLE_NAME> (<column specification>)
   ON COMMIT PRESERVE ROWS；
 
   2.事务特有的临时表
-  CREATE GLOBAL TEMPORARY <TABLE_NAME> (<column specification>)
+  CREATE GLOBAL TEMPORARY Table <TABLE_NAME> (<column specification>)
   ON COMMIT DELETE ROWS；
   CREATE GLOBAL TEMPORARY TABLE MyTempTable
   所建的临时表虽然是存在的，但是你试一下insert 一条记录然后用别的连接登上去select，记录是空的，明白了吧，我把下面两句话再贴一下：
   --ON COMMIT DELETE ROWS 说明临时表是事务指定，每次提交后ORACLE将截断表（删除全部行）
   --ON COMMIT PRESERVE ROWS 说明临时表是会话指定，当中断会话时ORACLE将截断表。
+  > alter system kill session 'sid,serial#';
+  	关闭window
+  
 
 # 执行计划
 

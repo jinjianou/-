@@ -580,7 +580,7 @@ JIT just-in-time
 
 
 
-		### 类加载器
+### 类加载器
 
 ![image-20220906101319139](assets/image-20220906101319139.png)
 
@@ -906,6 +906,22 @@ private  void encFile(String name){
 }
 ```
 
+
+
+### idea 整合javap插件
+
+settings--external tools
+
+C:\Program Files\Java\jdk1.8.0_202\bin\javap.exe
+
+-c $FileClass$     //不加c反编译成java 加c编译成汇编
+
+$OutputPath$
+
+
+
+右键 external tools-javap
+
 ### 初始化
 
 lazyloading/lazyInitializing
@@ -915,11 +931,26 @@ JVM sepc并没有规定何时加载
 ![image-20220906153130592](assets/image-20220906153130592.png)
 
 ```
+    public static class P{
+       final static int i=8;
+       static int j=10;
+       static {
+           System.out.println("P");
+       }
+    }
+    static class X extends P{
+        public X(){
+            System.out.println("X");
+        }
+    }
+```
+
+```
 P p;
 System.out.println(P.j); // static变量并会初始化
 System.out.println(P.i); // final变量并不会初始化
-X x = new X(); //初始化父类 但不会重复初始化
-Class.forName("org.example.Lazyloading$P"); //invokestatic 初始化
+X x = new X(); // 初始化父类(不是初始化实例) 但不会重复初始化
+Class.forName("org.example.Lazyloading$P"); //包含invokestatic过程 初始化
 ```
 
 ## 编译器

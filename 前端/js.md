@@ -564,9 +564,9 @@ console.log(newFunc(2));
 
 * ```js
           function X() {
-    
+        
           }
-    
+        
           console.log(new X() instanceof X) //true 构造方法
           console.log(X() instanceof X) //false
   ```
@@ -797,7 +797,7 @@ console.log(newFunc(2));
                   }
               });
               console.log(jin.hasOwnProperty('name')); //无hasOwnProperty方法 Object继承过来的
-    
+                
   ```
 
 * 自己的属性或方法优先于原型的
@@ -1008,9 +1008,9 @@ console.log(newFunc(2));
 	导入default导出的值时，最大的特点就是不用添加大括号，同时定义的变量名也不用一一对应
       
 * type='module'默认严格模式，且会等所有需要的模块解析完毕再加载 所以可以在dom之前获取到dom（一般得把script写在body的下面）
-    
+  
 * 特点:
-    
+  
   * 每个模块都有自己独立作用域
     
   * 预解析，只解析一次
@@ -1026,13 +1026,13 @@ console.log(newFunc(2));
   * 具名导出和默认导出可以混用
     
   * 按需动态加载模块 import('./a.js').then({f1,f2...}=>{...})
-    
+  
 * require commonjs(文件与文件之间的隔离)
     import命令在编译时就会将需要导入的文件或者变量函数等导进来，
 	而require是在运行时加载的，有点类似于懒加载
 	
   The require () function is only available by default on Node.js environment. 
-    
+  
   ```nodejs
       nodeapp.js
       function add(a, b) {
@@ -1047,10 +1047,10 @@ console.log(newFunc(2));
       app.js
       let { add, subtract } = require('./nodeapp')
       console.log('1+2=- ', add(1, 2));
-      ```
-    
+  ```
   
-    
+  
+  
 14. webpack 打包工具
 
     1. 下载node.js 
@@ -1234,7 +1234,7 @@ console.log(newFunc(2));
 
   includes 包含与否\
 
-  find/finIndex可以用在饮用类型上
+  find/finIndex可以用在饮用类型上 (indexOf对引用类型无效)
 
 * 迭代的方式
 
@@ -1259,4 +1259,63 @@ console.log(newFunc(2));
   array.reduce(function(pre, currentValue, currentIndex, arr), initialValue)
   ```
 
-  
+
+
+
+# 模块化
+
+09年,node.js项目创建,用于服务器端编程
+
+前端的复杂程度有限，没有模块也是可以的，但是在服务器端，一定要有模块，与操作系统和其他应用程序互动，否则根本没法编程
+
+15年 es6发布
+
+而这段时间,requirejs和seajs之类的工具包也出现了，可以说在对应规范下，require统治了ES6之前的所有模块化编程，即使现在，在ES6 module被完全实现之前，还是这样。
+
+1. CommonJS是一个组织, 提出 草案,其中就有一个Modules规范
+
+   require/exports
+
+   ES6提出import/export
+
+   区别
+
+   1. r/e只支持服务器端(node), 不支持原生浏览器(使用webpack等打包工具转化)
+
+   2. CommonJS 加载的是一个对象（即 module.exports 属性），该对象只有在脚本运行完才会生成。而 ES6 模块不是对象，它的对外接口只是一种静态定义，在代码静态解析阶段就会生成。
+
+      JS 引擎对脚本静态分析的时候，遇到模块加载命令import，就会生成一个只读引用。等到脚本真正执行时，再根据这个只读引用，到被加载的那个模块里面去取值
+
+   3. 用法不同
+
+      ```text
+      const fs = require('fs')
+      exports.fs = fs
+      //exports=module.exports={}
+      ```
+
+2. AMD 异步模块定义  异步方式加载模块
+
+   ```
+   define('module/id/string', ['module', 'dependency', 'array'],
+   function(module, dependency, array) {
+   return ModuleContents;
+   });
+   
+   //define(id?, dependencies?, factory)
+   id:字符串，模块名称(可选)
+   dependencies: 是我们要载入的依赖模块(可选)，使用相对路径。,注意是数组格式
+   factory: 工厂方法，返回一个模块函数
+   ```
+
+   RequrieJS其实就是AMD现在用的最广泛，最流行的实现
+
+   require([module], callback);
+
+3. CMD
+
+   CMD (Common Module Definition), 是seajs推崇的规范，CMD则是依赖就近，用的时候再require。
+
+   异步加载
+
+   就近依赖，需要使用把模块变为字符串解析一遍才知道依赖了那些模块
