@@ -1445,7 +1445,7 @@ class FilterChain{
 
       ​	h=1; h=3*h+1;   1 4 13....
 
-      ​	选择h=ceil((arr.length-1)/3)  比如10 选择4 1
+      ​	选择h=ceil((arr.length-1)/3)  比如10 选择3 1
 
     
 
@@ -1883,3 +1883,4 @@ Processing elements with an explicit `for-`loop is inherently(本质上) serial
 
 1. x^2-ky^2=1   x/y的解即近似数 先估算第一组(x1,y1)    x2=x1^2+k^2+y1^2;y2=2x1y1
 2. 连分数 形如  x1+1/(x2+1/x3+1/+.....1/k+xn)
+
