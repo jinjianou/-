@@ -279,49 +279,57 @@ SSH 和 Telnet 应用领域基本重合  SSH 比 Telnet 更加安全
 
 * linux文件操作
 
+  注意:
+
+  （1）Windows 会搜索当前目录和 PATH 变量，所以不用加 “./”。
+
+  （2）**Linux 不会搜索当前目录，它会到 PATH 环境变量的路径去搜索程序文件，所以需要加上 “./” 来指定到当前目录下去查找应用程序**
+
   **cd**  Change directory
-
-  * 改变当前工作目录
-
-  **ls ll** 
-
+  
+* 改变当前工作目录
+  
+**ls ll** 
+  
   * 显示指定目录下所有文件
-  * 【-|d|l】rw-------   -普通文件 d文件夹 l软链接 （快捷方式） 
-
-  **mkdir** [option] diretory
-
+* 【-|d|l】rw-------   -普通文件 d文件夹 l软链接 （快捷方式） 
+  
+**mkdir** [option] diretory
+  
   * mkdir -p a/b/c  make parent directories as needed(可创建多级目录)
   * {}并列   如 mkdir -p shiren{a,b,c} 会创建shirena,shirenb,shirenc三个文件夹
-
-  **rmdir**
-
-  * rmdir dir  **必须保证dir 为空**且是个directory
+  
+**rmdir**
+  
+* rmdir dir  **必须保证dir 为空**且是个directory
   * 并没有-f属性可以强制删除 可以递归从子目录一级一级向上删
   * rmdir -p a/b/c 同时删除c b a(假设a只有b b只有c) 哪级为空删到哪级
   * --ignore-fail-on-non-empty 参数 不会报错但也不会操作成功
-
-  **copy files and directories**
-
-  *        cp [OPTION]... [-T] SOURCE DEST
+  
+**copy files and directories**
+  
+*        cp [OPTION]... [-T] SOURCE DEST
            		cp  -T a.txt b.txt a.txt仍存在
-           cp [OPTION]... SOURCE(file). DIRECTORY
+         cp [OPTION]... SOURCE(file). DIRECTORY
            cp [OPTION]... -t DIRECTORY SOURCE(file)...
 
-  ​	-t, --target-directory=DIRECTORY          copy all SOURCE arguments into **DIRECTORY**  
-
-  ​	 -T, --no-target-directory          treat DEST as a **normal file**
-
-  ​	-r  -R  --recursive  可以将文件夹->文件夹 如 cp -r shenren* /opt
-
-		**mv - move (rename) files**
-		
-			   mv [OPTION]... [-T] SOURCE DEST    
-		
-					SOURCE **disappear**
-		
-			   mv [OPTION]... SOURCE... DIRECTORY   
-		
-			    mv [OPTION]... -t DIRECTORY SOURCE...
+	​	-t, --target-directory=DIRECTORY          copy all SOURCE arguments into **DIRECTORY**  
+	
+	​	 -T, --no-target-directory          treat DEST as a **normal file**
+	
+	​	-r  -R  --recursive  可以将文件夹->文件夹 如 cp -r shenren* /opt
+	
+	```
+	**mv - move (rename) files**
+	
+		   mv [OPTION]... [-T] SOURCE DEST    
+	
+				SOURCE **disappear**
+	
+		   mv [OPTION]... SOURCE... DIRECTORY   
+	
+		    mv [OPTION]... -t DIRECTORY SOURCE...
+	```
 
 
 
