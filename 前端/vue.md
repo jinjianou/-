@@ -2501,27 +2501,62 @@ file->preferences->user snippet 输入vue.json
 
 ## 多环境配置
 
-1. 增加开发和生产环境
+vue2: [webpack-dev-server](https://github.com/webpack/webpack-dev-server)  增加测试环境
 
-   vue2: [webpack-dev-server](https://github.com/webpack/webpack-dev-server)
+1. test.env.js
 
-   dev.env.js
+   ```
+   module.exports = {
+     NODE_ENV: '"test"',
+     BASE_URL:"XXXXXXXX"
+   }
+   ```
 
-   dev.env.js
+   
 
-   **process.env nodejs的一个环境变量，保存着系统的环境的变量信息**
+   
 
-   dev.env.js中配置的属性不在其中
+   **process.env nodejs的一个环境变量，保存着系统的环境的变量信息** 此时dev.env.js中配置的属性不在其中
 
     
 
-   1. config>index.js   修改host和port属性
-
    2.
 
+   复制`build.js`文件，并改名为`test.js`,并按以下进行修改
+
+   ```javascript
+   process.env.NODE_ENV = 'test'
+   const spinner = ora('building for test...') //打包时的提示文本
    ```
-   --env proprty=value 或 proprty
+
+   复制`webpack.prod.conf`文件，并改名为`webpack.test.conf`,并按以下进行修改
+
+   ```javascript
+   const env = require('../config/test.env')
+   const webpackConfig = require('./webpack.test.conf')
    ```
+
+   3.
+
+   package.json 在scripts属性中添加
+
+   ```json
+   "test": "node build/test.js" //新增
+   ```
+
+   4.
+
+   ```cmake
+   npm run test
+   ```
+
+   
+
+   
+
+   
+
+   
 
    
 
@@ -2531,17 +2566,18 @@ file->preferences->user snippet 输入vue.json
 
    vue-cli-service   命令会启动一个开发服务器 (基于 [webpack-dev-server](https://github.com/webpack/webpack-dev-server)) 并附带开箱即用的模块热重载 (Hot-Module-Replacement) 
 
-   新建`.env.dev`
+   新建`.env.dev
 
    ```
      NODE_ENV=development/test/production,
+     VUE_APP_SERVER:
    	VUE_APP_HOST='"http://www.haha2.com"',
      VUE_APP_PORT=9090,
    ```
 
    如果环境文件内部不包含 `NODE_ENV` 变量，它的值将取决于模式 
 
-   vue-cli-service  --mode dev
+   vue-cli-service  --mode dev --port 8081
 
    
 
@@ -2553,7 +2589,7 @@ file->preferences->user snippet 输入vue.json
 
 3. 修改axios请求地址支持多环境
 
-
+   如 http://localhost:8080 -> process.env. VUE_APP_SERVER
 
 
 
@@ -3312,7 +3348,7 @@ export default new Vuex.Store({
 ​	
 ​	    },
 ​	
-	    beforeRouteUpdate (to, from, next) {
+​	    beforeRouteUpdate (to, from, next) {
 
 
 ​	     
