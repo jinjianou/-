@@ -1,0 +1,103 @@
+2022-09-04 10:35:13.287 INFO  o.j.p.w.WikiKnowledgeHubApplication               :55   [32m                  [0;39m Starting WikiKnowledgeHubApplication using Java 1.8.0_191 on WIN-1EARLKCQ3SV with PID 18612 (E:\ideaProjects\wiki_knowledge_hub\target\classes started by Administrator in E:\ideaProjects\wiki_knowledge_hub)
+2022-09-04 10:35:13.295 INFO  o.j.p.w.WikiKnowledgeHubApplication               :637  [32m                  [0;39m No active profile set, falling back to default profiles: default
+2022-09-04 10:35:13.519 INFO  o.s.b.d.env.DevToolsPropertyDefaultsPostProcessor :255  [32m                  [0;39m Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2022-09-04 10:35:13.520 INFO  o.s.b.d.env.DevToolsPropertyDefaultsPostProcessor :255  [32m                  [0;39m For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2022-09-04 10:35:16.455 INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer      :108  [32m                  [0;39m Tomcat initialized with port(s): 8088 (http)
+2022-09-04 10:35:16.477 INFO  org.apache.coyote.http11.Http11NioProtocol        :173  [32m                  [0;39m Initializing ProtocolHandler ["http-nio-8088"]
+2022-09-04 10:35:16.479 INFO  org.apache.catalina.core.StandardService          :173  [32m                  [0;39m Starting service [Tomcat]
+2022-09-04 10:35:16.480 INFO  org.apache.catalina.core.StandardEngine           :173  [32m                  [0;39m Starting Servlet engine: [Apache Tomcat/9.0.56]
+2022-09-04 10:35:16.766 INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] :173  [32m                  [0;39m Initializing Spring embedded WebApplicationContext
+2022-09-04 10:35:16.768 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext    :290  [32m                  [0;39m Root WebApplicationContext: initialization completed in 3242 ms
+2022-09-04 10:35:18.361 INFO  o.s.b.d.autoconfigure.OptionalLiveReloadServer    :58   [32m                  [0;39m LiveReload server is running on port 35729
+2022-09-04 10:35:18.403 INFO  org.apache.coyote.http11.Http11NioProtocol        :173  [32m                  [0;39m Starting ProtocolHandler ["http-nio-8088"]
+2022-09-04 10:35:18.438 INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer      :220  [32m                  [0;39m Tomcat started on port(s): 8088 (http) with context path ''
+2022-09-04 10:35:18.460 INFO  o.j.p.w.WikiKnowledgeHubApplication               :61   [32m                  [0;39m Started WikiKnowledgeHubApplication in 9.106 seconds (JVM running for 13.398)
+2022-09-04 10:35:18.467 INFO  o.j.p.w.WikiKnowledgeHubApplication               :20   [32m                  [0;39m 启动成功
+2022-09-04 10:35:18.468 INFO  o.j.p.w.WikiKnowledgeHubApplication               :22   [32m                  [0;39m 端口： 8088
+2022-09-04 10:58:02.367 INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] :173  [32m                  [0;39m Initializing Spring DispatcherServlet 'dispatcherServlet'
+2022-09-04 10:58:02.367 INFO  org.springframework.web.servlet.DispatcherServlet :525  [32m                  [0;39m Initializing Servlet 'dispatcherServlet'
+2022-09-04 10:58:02.368 INFO  org.springframework.web.servlet.DispatcherServlet :547  [32m                  [0;39m Completed initialization in 1 ms
+2022-09-04 10:58:52.734 INFO  o.j.p.w.WikiKnowledgeHubApplication               :55   [32m                  [0;39m Starting WikiKnowledgeHubApplication using Java 1.8.0_191 on WIN-1EARLKCQ3SV with PID 18612 (E:\ideaProjects\wiki_knowledge_hub\target\classes started by Administrator in E:\ideaProjects\wiki_knowledge_hub)
+2022-09-04 10:58:52.735 INFO  o.j.p.w.WikiKnowledgeHubApplication               :637  [32m                  [0;39m No active profile set, falling back to default profiles: default
+2022-09-04 10:58:53.305 INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer      :108  [32m                  [0;39m Tomcat initialized with port(s): 8088 (http)
+2022-09-04 10:58:53.307 INFO  org.apache.coyote.http11.Http11NioProtocol        :173  [32m                  [0;39m Initializing ProtocolHandler ["http-nio-8088"]
+2022-09-04 10:58:53.308 INFO  org.apache.catalina.core.StandardService          :173  [32m                  [0;39m Starting service [Tomcat]
+2022-09-04 10:58:53.309 INFO  org.apache.catalina.core.StandardEngine           :173  [32m                  [0;39m Starting Servlet engine: [Apache Tomcat/9.0.56]
+2022-09-04 10:58:53.365 INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] :173  [32m                  [0;39m Initializing Spring embedded WebApplicationContext
+2022-09-04 10:58:53.365 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext    :290  [32m                  [0;39m Root WebApplicationContext: initialization completed in 624 ms
+2022-09-04 10:58:53.700 INFO  o.s.b.d.autoconfigure.OptionalLiveReloadServer    :58   [32m                  [0;39m LiveReload server is running on port 35729
+2022-09-04 10:58:53.725 INFO  org.apache.coyote.http11.Http11NioProtocol        :173  [32m                  [0;39m Starting ProtocolHandler ["http-nio-8088"]
+2022-09-04 10:58:53.729 INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer      :220  [32m                  [0;39m Tomcat started on port(s): 8088 (http) with context path ''
+2022-09-04 10:58:53.738 INFO  o.j.p.w.WikiKnowledgeHubApplication               :61   [32m                  [0;39m Started WikiKnowledgeHubApplication in 1.081 seconds (JVM running for 1428.675)
+2022-09-04 10:58:53.743 INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener :63   [32m                  [0;39m Condition evaluation unchanged
+2022-09-04 10:58:53.744 INFO  o.j.p.w.WikiKnowledgeHubApplication               :20   [32m                  [0;39m 启动成功
+2022-09-04 10:58:53.745 INFO  o.j.p.w.WikiKnowledgeHubApplication               :22   [32m                  [0;39m 端口： 8088
+2022-09-04 11:04:05.198 INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] :173  [32m                  [0;39m Initializing Spring DispatcherServlet 'dispatcherServlet'
+2022-09-04 11:04:05.199 INFO  org.springframework.web.servlet.DispatcherServlet :525  [32m                  [0;39m Initializing Servlet 'dispatcherServlet'
+2022-09-04 11:04:05.200 INFO  org.springframework.web.servlet.DispatcherServlet :547  [32m                  [0;39m Completed initialization in 1 ms
+2022-09-04 12:32:41.391 INFO  o.j.p.w.WikiKnowledgeHubApplication               :55   [32m                  [0;39m Starting WikiKnowledgeHubApplication using Java 1.8.0_191 on WIN-1EARLKCQ3SV with PID 18612 (E:\ideaProjects\wiki_knowledge_hub\target\classes started by Administrator in E:\ideaProjects\wiki_knowledge_hub)
+2022-09-04 12:32:41.392 INFO  o.j.p.w.WikiKnowledgeHubApplication               :637  [32m                  [0;39m No active profile set, falling back to default profiles: default
+2022-09-04 12:32:42.031 INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer      :108  [32m                  [0;39m Tomcat initialized with port(s): 8088 (http)
+2022-09-04 12:32:42.032 INFO  org.apache.coyote.http11.Http11NioProtocol        :173  [32m                  [0;39m Initializing ProtocolHandler ["http-nio-8088"]
+2022-09-04 12:32:42.033 INFO  org.apache.catalina.core.StandardService          :173  [32m                  [0;39m Starting service [Tomcat]
+2022-09-04 12:32:42.035 INFO  org.apache.catalina.core.StandardEngine           :173  [32m                  [0;39m Starting Servlet engine: [Apache Tomcat/9.0.56]
+2022-09-04 12:32:42.106 INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] :173  [32m                  [0;39m Initializing Spring embedded WebApplicationContext
+2022-09-04 12:32:42.106 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext    :290  [32m                  [0;39m Root WebApplicationContext: initialization completed in 707 ms
+2022-09-04 12:32:42.428 INFO  o.s.b.d.autoconfigure.OptionalLiveReloadServer    :58   [32m                  [0;39m LiveReload server is running on port 35729
+2022-09-04 12:32:42.441 INFO  org.apache.coyote.http11.Http11NioProtocol        :173  [32m                  [0;39m Starting ProtocolHandler ["http-nio-8088"]
+2022-09-04 12:32:42.444 INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer      :220  [32m                  [0;39m Tomcat started on port(s): 8088 (http) with context path ''
+2022-09-04 12:32:42.452 INFO  o.j.p.w.WikiKnowledgeHubApplication               :61   [32m                  [0;39m Started WikiKnowledgeHubApplication in 1.15 seconds (JVM running for 7057.39)
+2022-09-04 12:32:42.455 INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener :63   [32m                  [0;39m Condition evaluation unchanged
+2022-09-04 12:32:42.456 INFO  o.j.p.w.WikiKnowledgeHubApplication               :20   [32m                  [0;39m 启动成功
+2022-09-04 12:32:42.457 INFO  o.j.p.w.WikiKnowledgeHubApplication               :22   [32m                  [0;39m 端口： 8088
+2022-09-04 12:34:20.024 INFO  o.j.p.w.WikiKnowledgeHubApplication               :55   [32m                  [0;39m Starting WikiKnowledgeHubApplication using Java 1.8.0_191 on WIN-1EARLKCQ3SV with PID 18612 (E:\ideaProjects\wiki_knowledge_hub\target\classes started by Administrator in E:\ideaProjects\wiki_knowledge_hub)
+2022-09-04 12:34:20.025 INFO  o.j.p.w.WikiKnowledgeHubApplication               :637  [32m                  [0;39m No active profile set, falling back to default profiles: default
+2022-09-04 12:34:20.693 INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer      :108  [32m                  [0;39m Tomcat initialized with port(s): 8088 (http)
+2022-09-04 12:34:20.695 INFO  org.apache.coyote.http11.Http11NioProtocol        :173  [32m                  [0;39m Initializing ProtocolHandler ["http-nio-8088"]
+2022-09-04 12:34:20.696 INFO  org.apache.catalina.core.StandardService          :173  [32m                  [0;39m Starting service [Tomcat]
+2022-09-04 12:34:20.697 INFO  org.apache.catalina.core.StandardEngine           :173  [32m                  [0;39m Starting Servlet engine: [Apache Tomcat/9.0.56]
+2022-09-04 12:34:20.759 INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] :173  [32m                  [0;39m Initializing Spring embedded WebApplicationContext
+2022-09-04 12:34:20.760 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext    :290  [32m                  [0;39m Root WebApplicationContext: initialization completed in 731 ms
+2022-09-04 12:34:21.103 INFO  o.s.b.d.autoconfigure.OptionalLiveReloadServer    :58   [32m                  [0;39m LiveReload server is running on port 35729
+2022-09-04 12:34:21.129 INFO  org.apache.coyote.http11.Http11NioProtocol        :173  [32m                  [0;39m Starting ProtocolHandler ["http-nio-8088"]
+2022-09-04 12:34:21.134 INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer      :220  [32m                  [0;39m Tomcat started on port(s): 8088 (http) with context path ''
+2022-09-04 12:34:21.145 INFO  o.j.p.w.WikiKnowledgeHubApplication               :61   [32m                  [0;39m Started WikiKnowledgeHubApplication in 1.19 seconds (JVM running for 7156.083)
+2022-09-04 12:34:21.148 INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener :63   [32m                  [0;39m Condition evaluation unchanged
+2022-09-04 12:34:21.150 INFO  o.j.p.w.WikiKnowledgeHubApplication               :20   [32m                  [0;39m 启动成功
+2022-09-04 12:34:21.151 INFO  o.j.p.w.WikiKnowledgeHubApplication               :22   [32m                  [0;39m 端口： 8088
+2022-09-04 12:57:49.962 INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] :173  [32m                  [0;39m Initializing Spring DispatcherServlet 'dispatcherServlet'
+2022-09-04 12:57:49.963 INFO  org.springframework.web.servlet.DispatcherServlet :525  [32m                  [0;39m Initializing Servlet 'dispatcherServlet'
+2022-09-04 12:57:49.965 INFO  org.springframework.web.servlet.DispatcherServlet :547  [32m                  [0;39m Completed initialization in 1 ms
+2022-09-04 14:51:27.673 INFO  o.j.p.w.WikiKnowledgeHubApplication               :55   [32m                  [0;39m Starting WikiKnowledgeHubApplication using Java 1.8.0_191 on WIN-1EARLKCQ3SV with PID 18612 (E:\ideaProjects\wiki_knowledge_hub\target\classes started by Administrator in E:\ideaProjects\wiki_knowledge_hub)
+2022-09-04 14:51:27.674 INFO  o.j.p.w.WikiKnowledgeHubApplication               :637  [32m                  [0;39m No active profile set, falling back to default profiles: default
+2022-09-04 14:51:28.633 INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer      :108  [32m                  [0;39m Tomcat initialized with port(s): 8088 (http)
+2022-09-04 14:51:28.635 INFO  org.apache.coyote.http11.Http11NioProtocol        :173  [32m                  [0;39m Initializing ProtocolHandler ["http-nio-8088"]
+2022-09-04 14:51:28.636 INFO  org.apache.catalina.core.StandardService          :173  [32m                  [0;39m Starting service [Tomcat]
+2022-09-04 14:51:28.636 INFO  org.apache.catalina.core.StandardEngine           :173  [32m                  [0;39m Starting Servlet engine: [Apache Tomcat/9.0.56]
+2022-09-04 14:51:28.705 INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] :173  [32m                  [0;39m Initializing Spring embedded WebApplicationContext
+2022-09-04 14:51:28.706 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext    :290  [32m                  [0;39m Root WebApplicationContext: initialization completed in 1024 ms
+2022-09-04 14:51:29.028 INFO  o.s.b.d.autoconfigure.OptionalLiveReloadServer    :58   [32m                  [0;39m LiveReload server is running on port 35729
+2022-09-04 14:51:29.042 INFO  org.apache.coyote.http11.Http11NioProtocol        :173  [32m                  [0;39m Starting ProtocolHandler ["http-nio-8088"]
+2022-09-04 14:51:29.045 INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer      :220  [32m                  [0;39m Tomcat started on port(s): 8088 (http) with context path ''
+2022-09-04 14:51:29.052 INFO  o.j.p.w.WikiKnowledgeHubApplication               :61   [32m                  [0;39m Started WikiKnowledgeHubApplication in 1.477 seconds (JVM running for 15383.99)
+2022-09-04 14:51:29.057 INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener :63   [32m                  [0;39m Condition evaluation unchanged
+2022-09-04 14:51:29.058 INFO  o.j.p.w.WikiKnowledgeHubApplication               :20   [32m                  [0;39m 启动成功
+2022-09-04 14:51:29.059 INFO  o.j.p.w.WikiKnowledgeHubApplication               :22   [32m                  [0;39m 端口： 8088
+2022-09-04 14:51:32.288 INFO  o.j.p.w.WikiKnowledgeHubApplication               :55   [32m                  [0;39m Starting WikiKnowledgeHubApplication using Java 1.8.0_191 on WIN-1EARLKCQ3SV with PID 18612 (E:\ideaProjects\wiki_knowledge_hub\target\classes started by Administrator in E:\ideaProjects\wiki_knowledge_hub)
+2022-09-04 14:51:32.290 INFO  o.j.p.w.WikiKnowledgeHubApplication               :637  [32m                  [0;39m No active profile set, falling back to default profiles: default
+2022-09-04 14:51:32.763 INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer      :108  [32m                  [0;39m Tomcat initialized with port(s): 8088 (http)
+2022-09-04 14:51:32.764 INFO  org.apache.coyote.http11.Http11NioProtocol        :173  [32m                  [0;39m Initializing ProtocolHandler ["http-nio-8088"]
+2022-09-04 14:51:32.765 INFO  org.apache.catalina.core.StandardService          :173  [32m                  [0;39m Starting service [Tomcat]
+2022-09-04 14:51:32.765 INFO  org.apache.catalina.core.StandardEngine           :173  [32m                  [0;39m Starting Servlet engine: [Apache Tomcat/9.0.56]
+2022-09-04 14:51:32.815 INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] :173  [32m                  [0;39m Initializing Spring embedded WebApplicationContext
+2022-09-04 14:51:32.815 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext    :290  [32m                  [0;39m Root WebApplicationContext: initialization completed in 515 ms
+2022-09-04 14:51:33.078 INFO  o.s.b.d.autoconfigure.OptionalLiveReloadServer    :58   [32m                  [0;39m LiveReload server is running on port 35729
+2022-09-04 14:51:33.093 INFO  org.apache.coyote.http11.Http11NioProtocol        :173  [32m                  [0;39m Starting ProtocolHandler ["http-nio-8088"]
+2022-09-04 14:51:33.096 INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer      :220  [32m                  [0;39m Tomcat started on port(s): 8088 (http) with context path ''
+2022-09-04 14:51:33.109 INFO  o.j.p.w.WikiKnowledgeHubApplication               :61   [32m                  [0;39m Started WikiKnowledgeHubApplication in 0.919 seconds (JVM running for 15388.047)
+2022-09-04 14:51:33.113 INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener :63   [32m                  [0;39m Condition evaluation unchanged
+2022-09-04 14:51:33.115 INFO  o.j.p.w.WikiKnowledgeHubApplication               :20   [32m                  [0;39m 启动成功
+2022-09-04 14:51:33.116 INFO  o.j.p.w.WikiKnowledgeHubApplication               :22   [32m                  [0;39m 端口： 8088
+2022-09-04 14:53:29.735 INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] :173  [32m                  [0;39m Initializing Spring DispatcherServlet 'dispatcherServlet'
+2022-09-04 14:53:29.735 INFO  org.springframework.web.servlet.DispatcherServlet :525  [32m                  [0;39m Initializing Servlet 'dispatcherServlet'
+2022-09-04 14:53:29.736 INFO  org.springframework.web.servlet.DispatcherServlet :547  [32m                  [0;39m Completed initialization in 0 ms

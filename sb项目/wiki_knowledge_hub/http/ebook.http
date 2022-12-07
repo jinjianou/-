@@ -1,0 +1,9 @@
+GET http://localhost:8080/ebook/list
+Accept: application/json
+
+###
+GET http://localhost:8080/ebook/listByName?title=Java&description=Java
+#GET http://localhost:8080/ebook/listByName?description=Java
+Accept: application/json
+Content-Type: application/x-www-form-urlencoded
+
